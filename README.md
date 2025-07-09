@@ -1,10 +1,9 @@
 - 👋 Hi, I’m @flaming32
-- 👀 I’m interested in coding
-- 🌱 I’m currently learning Go language.
+- 👀 I am a product designer
+- 🌱 I’m currently learning UX.
 - 💞️ I’m looking to collaborate on any job.
-- 📫 How to reach me @ nifemibuola32@gmail.com
-Instagram:olaoluwabuola105
-Whatsapp:+2348166474516
+- 📫 How to reach me: @nifemibuola32@gmail.com
+X: @olaoluwabuola
 
 <!---
 flaming32/flaming32 is a ✨ special ✨ repository because its `README.md` (this file) appears on your GitHub profile.

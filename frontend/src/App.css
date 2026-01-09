@@ -1,34 +1,195 @@
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
+/* Stashorra App Styles */
+
+.app-container {
+    min-height: 100vh;
+    background-color: #050505;
+    position: relative;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
-    }
-}
-
-.App-header {
-    background-color: #0f0f10;
+/* Hero Section */
+.hero-section {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
+    padding: 2rem;
 }
 
-.App-link {
-    color: #61dafb;
+/* Logo */
+.logo {
+    font-family: "Syne", sans-serif;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: -0.05em;
 }
 
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+/* Price display */
+.price-display {
+    font-family: "JetBrains Mono", monospace;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+}
+
+/* Receipt card */
+.receipt-card {
+    background: linear-gradient(to bottom, #121212 0%, #0a0a0a 100%);
+    border: 1px dashed #333;
+    position: relative;
+}
+
+.receipt-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background: repeating-linear-gradient(
+        90deg,
+        transparent 0,
+        transparent 8px,
+        #1a1a1a 8px,
+        #1a1a1a 16px
+    );
+}
+
+.receipt-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background: repeating-linear-gradient(
+        90deg,
+        transparent 0,
+        transparent 8px,
+        #1a1a1a 8px,
+        #1a1a1a 16px
+    );
+}
+
+/* Condition indicator */
+.condition-excellent { color: #00ff00; }
+.condition-good { color: #88ff88; }
+.condition-fair { color: #ffcc00; }
+.condition-poor { color: #ff3333; }
+
+/* Buttons */
+.btn-primary {
+    background-color: #ffffff;
+    color: #000000;
+    border: 1px solid #ffffff;
+    font-family: "JetBrains Mono", monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+    background-color: #e5e5e5;
+    transform: translateY(-2px);
+}
+
+.btn-primary:active {
+    transform: scale(0.98);
+}
+
+.btn-secondary {
+    background-color: transparent;
+    color: #ffffff;
+    border: 1px solid #333;
+    font-family: "JetBrains Mono", monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+    border-color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Form inputs */
+.form-input {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid #333;
+    color: #ffffff;
+    font-family: "Chivo", sans-serif;
+    padding: 1rem 0;
+    font-size: 1.25rem;
+    transition: border-color 0.2s ease;
+}
+
+.form-input::placeholder {
+    color: #444;
+}
+
+.form-input:focus {
+    border-color: #ffffff;
+    outline: none;
+}
+
+/* Labels */
+.form-label {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: #666;
+}
+
+/* Cards */
+.feature-card {
+    background: #121212;
+    border: 1px solid #222;
+    padding: 2rem;
+    transition: all 0.2s ease;
+}
+
+.feature-card:hover {
+    border-color: #444;
+}
+
+/* Loading states */
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.loading-shimmer {
+    background: linear-gradient(90deg, #1a1a1a 25%, #252525 50%, #1a1a1a 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+/* Divider */
+.divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #333, transparent);
+}
+
+/* Step indicator */
+.step-indicator {
+    width: 32px;
+    height: 32px;
+    border: 1px solid #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.875rem;
+}
+
+.step-indicator.active {
+    background: #ffffff;
+    color: #000000;
+    border-color: #ffffff;
+}
+
+.step-indicator.completed {
+    background: #222;
+    border-color: #444;
 }

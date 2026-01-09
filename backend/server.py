@@ -217,7 +217,7 @@ async def estimate_price_with_ai(
         return calculate_fallback_estimate(new_price, used_prices, condition)
     
     try:
-        from emergentintegrations.llm.openai import chat
+        from emergentintegrations.llm.openai import LlmChat
         
         # Calculate averages for context
         new_price_str = f"₦{new_price:,.0f}" if new_price else "Unknown"

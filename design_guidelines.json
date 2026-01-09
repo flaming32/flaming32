@@ -1,0 +1,137 @@
+{
+  "design_system": {
+    "identity": {
+      "name": "Stashorra",
+      "archetype": "The Digital Appraiser",
+      "core_values": ["Truth", "Precision", "Minimalism"],
+      "visual_metaphor": "The Receipt / The Terminal",
+      "emotional_tone": "Objective, High-Contrast, Premium Utility"
+    },
+    "typography": {
+      "font_imports": [
+        "https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Chivo:wght@300;400;700;900&family=JetBrains+Mono:wght@400;500&display=swap"
+      ],
+      "family": {
+        "brand": "\"Syne\", sans-serif",
+        "headings": "\"Chivo\", sans-serif",
+        "body": "\"Chivo\", sans-serif",
+        "mono": "\"JetBrains Mono\", monospace"
+      },
+      "usage": {
+        "logo": "font-brand font-extrabold tracking-tighter text-4xl uppercase",
+        "h1": "font-headings font-black text-6xl md:text-8xl tracking-tight leading-[0.9] uppercase",
+        "h2": "font-headings font-bold text-4xl md:text-5xl tracking-tight",
+        "h3": "font-headings font-bold text-2xl tracking-normal",
+        "body": "font-body text-base leading-relaxed text-zinc-400",
+        "label": "font-mono text-xs uppercase tracking-widest text-zinc-500",
+        "price": "font-mono text-5xl md:text-7xl font-medium tracking-tighter"
+      }
+    },
+    "colors": {
+      "palette": {
+        "background": "#050505",
+        "foreground": "#ffffff",
+        "surface": "#121212",
+        "surface_highlight": "#1E1E1E",
+        "border": "#333333",
+        "border_subtle": "#222222",
+        "primary": "#ffffff",
+        "primary_foreground": "#000000",
+        "secondary": "#27272a",
+        "accent": "#ffffff",
+        "error": "#ff3333",
+        "success": "#00ff00"
+      },
+      "gradients": {
+        "subtle_glow": "radial-gradient(circle at center, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0) 70%)",
+        "scanline": "linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0.2))"
+      },
+      "rules": [
+        "NO gradients for buttons or backgrounds.",
+        "Use pure black (#000000) or near-black (#050505) for backgrounds.",
+        "Use pure white (#FFFFFF) for primary text and actions.",
+        "Use greyscale for hierarchy. No colors allowed except for semantic states (Error/Success) which should be stark."
+      ]
+    },
+    "layout": {
+      "spacing_scale": {
+        "section_gap": "py-24 md:py-32",
+        "element_gap": "gap-8 md:gap-12",
+        "internal_padding": "p-6 md:p-10"
+      },
+      "grid_systems": {
+        "marketing": "grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8",
+        "dashboard": "grid grid-cols-1 md:grid-cols-4 gap-4",
+        "bento": "grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows-[minmax(200px,auto)]"
+      },
+      "containers": {
+        "max_width": "max-w-7xl mx-auto px-4 md:px-8"
+      }
+    },
+    "components": {
+      "buttons": {
+        "primary": "bg-white text-black hover:bg-zinc-200 rounded-none h-12 px-8 font-mono uppercase tracking-wider text-sm transition-transform active:scale-95 border border-white",
+        "secondary": "bg-transparent text-white border border-zinc-700 hover:border-white hover:bg-zinc-900 rounded-none h-12 px-8 font-mono uppercase tracking-wider text-sm transition-colors",
+        "ghost": "text-zinc-400 hover:text-white font-mono uppercase text-xs tracking-widest hover:underline decoration-1 underline-offset-4"
+      },
+      "inputs": {
+        "default": "bg-transparent border-b-2 border-zinc-800 focus:border-white rounded-none px-0 py-4 text-xl font-headings placeholder:text-zinc-700 focus:ring-0 focus:outline-none transition-colors",
+        "label_behavior": "Label should be uppercase, mono, and float above or sit beside the input."
+      },
+      "cards": {
+        "style": "bg-zinc-950 border border-zinc-800 p-8 rounded-none hover:border-zinc-600 transition-colors relative overflow-hidden group",
+        "hover_effect": "Add a subtle white glow in the corner or a scanline effect on hover."
+      },
+      "visual_enhancers": {
+        "noise_texture": "fixed inset-0 z-[-1] opacity-[0.03] pointer-events-none mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]",
+        "scanlines": "pointer-events-none fixed inset-0 z-50 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%] pointer-events-none opacity-20",
+        "borders": "Use 1px borders. For 'Receipt' sections, use dashed borders (border-dashed)."
+      }
+    },
+    "motion": {
+      "philosophy": "Mechanical & Snappy",
+      "transitions": "transition-all duration-200 ease-[cubic-bezier(0.25,1,0.5,1)]",
+      "page_load": "initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}",
+      "hover": "whileHover={{ y: -2 }}"
+    },
+    "assets": {
+      "images": {
+        "hero_phone": "https://images.unsplash.com/photo-1631643089475-7ce8302dface?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDF8MHwxfHNlYXJjaHwxfHxpcGhvbmUlMjAxNSUyMHBybyUyMG1heCUyMGJsYWNrJTIwdGl0YW5pdW0lMjBtaW5pbWFsaXN0fGVufDB8fHx8MTc2Nzk5Njc5M3ww&ixlib=rb-4.1.0&q=85",
+        "product_detail": "https://images.pexels.com/photos/18403793/pexels-photo-18403793.jpeg",
+        "cracked_screen": "https://images.pexels.com/photos/6858618/pexels-photo-6858618.jpeg",
+        "texture_abstract": "https://images.unsplash.com/photo-1628557119555-fb3d687cc310?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzZ8MHwxfHNlYXJjaHwyfHxzYW1zdW5nJTIwZ2FsYXh5JTIwczI0JTIwdWx0cmElMjBtaW5pbWFsaXN0JTIwYmxhY2t8ZW58MHx8fHwxNzY3OTk2Nzk1fDA&ixlib=rb-4.1.0&q=85"
+      },
+      "icons": "Use 'lucide-react'. Stroke width: 1.5px. Sharp edges if possible."
+    },
+    "instructions_to_main_agent": {
+      "general": [
+        "STRICTLY follow the Black & White theme. No colors.",
+        "Use the 'Syne' font for the 'Stashorra' logo text.",
+        "The 'Price Estimation' result should look like a printed receipt or a terminal output.",
+        "Use 'JetBrains Mono' for all pricing numbers and technical specs.",
+        "Inputs should feel like filling out a government form or a manifest - serious and structured.",
+        "Use the 'noise_texture' class on the main wrapper to give a film grain effect."
+      ],
+      "pages": {
+        "landing": {
+          "hero": "Center aligned, massive text 'WHAT IS IT WORTH?'. Minimal search bar below.",
+          "features": "Bento grid of features (Real-time scraping, AI Analysis, Instant Quote). Use icons."
+        },
+        "condition_form": {
+          "layout": "Step-by-step wizard or a single long 'Manifest' form.",
+          "style": "Typewriter style. Questions on the left, Yes/No toggles on the right."
+        },
+        "results": {
+          "layout": "Split screen. Left: Phone Image (Grayscale). Right: The 'Receipt' with the price breakdown.",
+          "details": "Show 'Slot.com New Price' and 'Jiji.com Used Price' as reference points in mono font."
+        }
+      }
+    },
+    "universal_guidelines": [
+      "Do not use gradients.",
+      "Do not use rounded corners > 4px. Prefer 0px.",
+      "Always add data-testid to interactive elements.",
+      "Use generous padding (py-24) between sections."
+    ]
+  }
+}

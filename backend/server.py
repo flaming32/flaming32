@@ -249,8 +249,8 @@ Consider:
 Respond ONLY with valid JSON, no markdown:
 {{"estimated_price": number, "confidence": "string", "reasoning": "string"}}"""
 
-        response = await chat(
-            api_key=EMERGENT_LLM_KEY,
+        llm_chat = LlmChat(api_key=EMERGENT_LLM_KEY)
+        response = await llm_chat.chat(
             prompt=prompt,
             model="gpt-4o-mini"
         )

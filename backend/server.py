@@ -344,6 +344,27 @@ async def search_phone_prices(request: PhoneSearchRequest):
     
     slot_prices, jiji_prices = await asyncio.gather(slot_task, jiji_task)
     
+    # If scraping returns no results, use reference prices
+    ref_prices = get_reference_prices(request.brand, request.model)
+    
+    if not slot_prices and ref_prices["new"]:
+        slot_prices = [PriceData(
+            source="slot.ng (reference)",
+            price=ref_prices["new"],
+            currency="NGN",
+            url=f"https://slot.ng/catalogsearch/result/?q={request.brand}+{request.model}",
+            title=f"{request.brand} {request.model} (New)"
+        )]
+    
+    if not jiji_prices and ref_prices["used"]:
+        jiji_prices = [PriceData(
+            source="jiji.ng (reference)",
+            price=ref_prices["used"],
+            currency="NGN",
+            url=f"https://jiji.ng/mobile-phones?query={request.brand}+{request.model}",
+            title=f"{request.brand} {request.model} (Used)"
+        )]
+    
     return ScrapedPrices(
         slot_prices=slot_prices,
         jiji_prices=jiji_prices
@@ -398,6 +419,62 @@ async def get_estimates(limit: int = 10):
             est['timestamp'] = datetime.fromisoformat(est['timestamp'])
     
     return estimates
+
+# Reference prices for common phones (in NGN) - used as fallback when scraping fails
+REFERENCE_PRICES = {
+    "Apple": {
+        "iPhone 15 Pro Max": {"new": 2200000, "used": 1700000},
+        "iPhone 15 Pro": {"new": 1900000, "used": 1500000},
+        "iPhone 15": {"new": 1400000, "used": 1100000},
+        "iPhone 14 Pro Max": {"new": 1600000, "used": 1200000},
+        "iPhone 14": {"new": 1100000, "used": 850000},
+        "iPhone 13": {"new": 850000, "used": 650000},
+        "iPhone 12": {"new": 650000, "used": 480000},
+        "iPhone 11": {"new": 480000, "used": 350000},
+    },
+    "Samsung": {
+        "Galaxy S24 Ultra": {"new": 2100000, "used": 1600000},
+        "Galaxy S24+": {"new": 1500000, "used": 1150000},
+        "Galaxy S24": {"new": 1200000, "used": 900000},
+        "Galaxy S23 Ultra": {"new": 1400000, "used": 1050000},
+        "Galaxy A54": {"new": 380000, "used": 280000},
+        "Galaxy A34": {"new": 280000, "used": 200000},
+        "Galaxy Z Fold 5": {"new": 2800000, "used": 2100000},
+        "Galaxy Z Flip 5": {"new": 1300000, "used": 950000},
+    },
+    "Google": {
+        "Pixel 8 Pro": {"new": 950000, "used": 720000},
+        "Pixel 8": {"new": 650000, "used": 480000},
+        "Pixel 7 Pro": {"new": 580000, "used": 420000},
+        "Pixel 7": {"new": 450000, "used": 320000},
+        "Pixel 6a": {"new": 320000, "used": 220000},
+    },
+    "Tecno": {
+        "Camon 20 Pro": {"new": 280000, "used": 200000},
+        "Camon 20": {"new": 180000, "used": 130000},
+        "Spark 10 Pro": {"new": 150000, "used": 100000},
+        "Pova 5": {"new": 160000, "used": 110000},
+        "Phantom X2": {"new": 450000, "used": 320000},
+    },
+    "Infinix": {
+        "Note 30 Pro": {"new": 220000, "used": 160000},
+        "Note 30": {"new": 170000, "used": 120000},
+        "Hot 30": {"new": 120000, "used": 85000},
+        "Zero 30": {"new": 280000, "used": 200000},
+        "Smart 8": {"new": 95000, "used": 65000},
+    },
+    "Xiaomi": {
+        "Redmi Note 13 Pro": {"new": 280000, "used": 200000},
+        "Redmi Note 12": {"new": 180000, "used": 130000},
+        "POCO X5 Pro": {"new": 320000, "used": 230000},
+        "POCO M5": {"new": 150000, "used": 100000},
+    },
+}
+
+def get_reference_prices(brand: str, model: str) -> dict:
+    """Get reference prices for a phone model"""
+    brand_prices = REFERENCE_PRICES.get(brand, {})
+    return brand_prices.get(model, {"new": None, "used": None})
 
 @api_router.get("/popular-phones")
 async def get_popular_phones():

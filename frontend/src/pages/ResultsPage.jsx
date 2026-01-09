@@ -17,7 +17,7 @@ export default function ResultsPage({ phoneData, scrapedPrices, estimate }) {
   if (!phoneData || !estimate) return null;
 
   const formatPrice = (price) => {
-    if (!price) return "N/A";
+    if (!price || price === 0) return "Price Unavailable";
     return `₦${Math.round(price).toLocaleString()}`;
   };
 

@@ -254,10 +254,7 @@ Respond ONLY with valid JSON, no markdown:
             session_id="price_estimation",
             system_message="You are an expert phone valuation specialist in Nigeria."
         )
-        response = await llm_chat.chat(
-            prompt=prompt,
-            model="gpt-4o-mini"
-        )
+        response = await llm_chat.send_message(prompt)
         
         # Parse the AI response
         try:

@@ -258,8 +258,17 @@ Respond ONLY with valid JSON, no markdown:
         
         # Parse the AI response
         try:
-            # Clean the response
-            response_text = response.strip()
+            # Handle different response types
+            if hasattr(response, 'file_contents'):
+                response_text = response.file_contents
+            elif hasattr(response, 'content'):
+                response_text = response.content
+            elif isinstance(response, str):
+                response_text = response
+            else:
+                response_text = str(response)
+                
+            response_text = response_text.strip()
             if response_text.startswith("```"):
                 response_text = re.sub(r'^```json?\s*', '', response_text)
                 response_text = re.sub(r'\s*```$', '', response_text)
@@ -270,8 +279,8 @@ Respond ONLY with valid JSON, no markdown:
                 "confidence": result.get("confidence", "medium"),
                 "reasoning": result.get("reasoning", "AI estimation based on market data and condition.")
             }
-        except json.JSONDecodeError:
-            logging.error(f"Failed to parse AI response: {response}")
+        except (json.JSONDecodeError, AttributeError, ValueError) as e:
+            logging.error(f"Failed to parse AI response: {response}, Error: {e}")
             return calculate_fallback_estimate(new_price, used_prices, condition)
             
     except Exception as e:

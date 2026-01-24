@@ -50,8 +50,9 @@ PAYMENT_PACKAGES = {
     "reseller": {
         "name": "Reseller Pack",
         "amount": 3000,
-        "uses": 20,
-        "description": "20 price estimates (Save ₦1,000!)"
+        "codes_count": 20,
+        "uses_per_code": 1,
+        "description": "20 codes to distribute (₦150 each!)"
     }
 }
 
@@ -164,6 +165,9 @@ class AdminGenerateCode(BaseModel):
     package: str = "basic"
     send_email: bool = False
     recipient_email: Optional[str] = None
+
+class ResellerDashboardRequest(BaseModel):
+    master_code: str
 
 class EmailNotification(BaseModel):
     recipient_email: EmailStr
@@ -875,19 +879,163 @@ async def generate_code(request: AdminGenerateCode):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
     package = PAYMENT_PACKAGES.get(request.package, PAYMENT_PACKAGES["basic"])
-    code = generate_access_code()
     
-    while await db.access_codes.find_one({"code": code}):
+    if request.package == "reseller":
+        # Generate master code for reseller
+        master_code = "R-" + generate_access_code()
+        while await db.reseller_masters.find_one({"master_code": master_code}):
+            master_code = "R-" + generate_access_code()
+        
+        # Generate 20 individual codes for reseller to distribute
+        sub_codes = []
+        codes_count = package.get("codes_count", 20)
+        uses_per_code = package.get("uses_per_code", 1)
+        
+        for i in range(codes_count):
+            sub_code = generate_access_code()
+            while await db.access_codes.find_one({"code": sub_code}) or sub_code in [c["code"] for c in sub_codes]:
+                sub_code = generate_access_code()
+            
+            sub_code_doc = {
+                "code": sub_code,
+                "uses_remaining": uses_per_code,
+                "package": "reseller_sub",
+                "master_code": master_code,
+                "created_at": datetime.now(timezone.utc).isoformat(),
+                "note": f"Reseller code #{i+1}",
+                "last_used": None,
+                "distributed": False
+            }
+            sub_codes.append(sub_code_doc)
+        
+        # Insert all sub codes
+        if sub_codes:
+            await db.access_codes.insert_many(sub_codes)
+        
+        # Create master record
+        master_doc = {
+            "master_code": master_code,
+            "package": "reseller",
+            "codes_count": codes_count,
+            "note": request.note or "",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.reseller_masters.insert_one(master_doc)
+        
+        email_sent = False
+        if request.send_email and request.recipient_email:
+            email_sent = await send_reseller_code_email(request.recipient_email, master_code, codes_count)
+        
+        return {
+            "code": master_code,
+            "is_reseller": True,
+            "codes_count": codes_count,
+            "package": package["name"],
+            "email_sent": email_sent
+        }
+    else:
+        # Basic package - single code with multiple uses
         code = generate_access_code()
+        while await db.access_codes.find_one({"code": code}):
+            code = generate_access_code()
+        
+        doc = {
+            "code": code,
+            "uses_remaining": package["uses"],
+            "package": request.package,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "note": request.note or "",
+            "last_used": None
+        }
+        await db.access_codes.insert_one(doc)
+        
+        email_sent = False
+        if request.send_email and request.recipient_email:
+            email_sent = await send_access_code_email(request.recipient_email, code, package["name"], package["uses"])
+        
+        return {"code": code, "uses": package["uses"], "package": package["name"], "email_sent": email_sent}
+
+async def send_reseller_code_email(recipient_email: str, master_code: str, codes_count: int):
+    """Send reseller master code via email"""
+    if not RESEND_API_KEY:
+        return False
     
-    doc = {"code": code, "uses_remaining": package["uses"], "package": request.package, "created_at": datetime.now(timezone.utc).isoformat(), "note": request.note or "", "last_used": None}
-    await db.access_codes.insert_one(doc)
+    html_content = f"""
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; padding: 20px; background: #000; color: #fff;">
+            <h1 style="margin: 0; font-size: 24px;">STASHORRA</h1>
+            <p style="margin: 5px 0 0 0; font-size: 12px; color: #888;">Reseller Dashboard</p>
+        </div>
+        <div style="padding: 30px 20px; background: #f9f9f9;">
+            <h2 style="color: #000;">Your Reseller Code is Ready!</h2>
+            <div style="background: #22c55e; color: #fff; padding: 20px; text-align: center; margin: 20px 0;">
+                <span style="font-family: monospace; font-size: 28px; letter-spacing: 4px; font-weight: bold;">{master_code}</span>
+            </div>
+            <p><strong>{codes_count} individual codes</strong> are ready for you to distribute!</p>
+            <p>Visit stashorra.store and click the <strong>👁 (eye icon)</strong> button, then enter your master code to access your reseller dashboard.</p>
+        </div>
+    </div>
+    """
     
-    email_sent = False
-    if request.send_email and request.recipient_email:
-        email_sent = await send_access_code_email(request.recipient_email, code, package["name"], package["uses"])
+    params = {
+        "from": SENDER_EMAIL,
+        "to": [recipient_email],
+        "subject": f"Your Stashorra Reseller Code: {master_code}",
+        "html": html_content
+    }
     
-    return {"code": code, "uses": package["uses"], "package": package["name"], "email_sent": email_sent}
+    try:
+        await asyncio.to_thread(resend.Emails.send, params)
+        return True
+    except:
+        return False
+
+@api_router.post("/reseller/dashboard")
+async def get_reseller_dashboard(request: ResellerDashboardRequest):
+    """Get reseller's codes dashboard"""
+    master_code = request.master_code.upper()
+    
+    # Check if it's a valid reseller master code
+    master = await db.reseller_masters.find_one({"master_code": master_code}, {"_id": 0})
+    if not master:
+        raise HTTPException(status_code=404, detail="Invalid reseller code")
+    
+    # Get all sub-codes for this reseller
+    sub_codes = await db.access_codes.find(
+        {"master_code": master_code},
+        {"_id": 0}
+    ).sort("created_at", 1).to_list(100)
+    
+    # Calculate stats
+    total_codes = len(sub_codes)
+    available_codes = len([c for c in sub_codes if c.get("uses_remaining", 0) > 0])
+    used_codes = total_codes - available_codes
+    
+    return {
+        "master_code": master_code,
+        "note": master.get("note", ""),
+        "created_at": master.get("created_at"),
+        "total_codes": total_codes,
+        "available_codes": available_codes,
+        "used_codes": used_codes,
+        "codes": sub_codes
+    }
+
+@api_router.get("/admin/reseller-masters")
+async def get_reseller_masters(username: str, password: str):
+    """Get all reseller master codes"""
+    if username != ADMIN_USERNAME or password != ADMIN_PASSWORD:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    masters = await db.reseller_masters.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    
+    # Add stats to each master
+    for master in masters:
+        sub_codes = await db.access_codes.find({"master_code": master["master_code"]}).to_list(100)
+        master["total_codes"] = len(sub_codes)
+        master["available_codes"] = len([c for c in sub_codes if c.get("uses_remaining", 0) > 0])
+    
+    return {"masters": masters}
 
 @api_router.get("/admin/codes")
 async def get_all_codes(username: str, password: str):

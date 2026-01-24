@@ -114,6 +114,33 @@ export default function LandingPage({ setPhoneData, setScrapedPrices, accessCode
     }
   };
 
+  const fetchResellerDashboard = async () => {
+    if (!resellerCodeInput.trim()) return;
+    setIsLoadingReseller(true);
+    setResellerDashboard(null);
+    try {
+      const response = await axios.post(`${API}/reseller/dashboard`, { 
+        master_code: resellerCodeInput.trim().toUpperCase() 
+      });
+      setResellerDashboard(response.data);
+    } catch (error) {
+      if (error.response?.status === 404) {
+        toast.error("Invalid reseller code. Make sure you're using the master code (starts with R-)");
+      } else {
+        toast.error("Failed to load reseller dashboard");
+      }
+    } finally {
+      setIsLoadingReseller(false);
+    }
+  };
+
+  const copyCode = (code) => {
+    navigator.clipboard.writeText(code);
+    setCopiedCode(code);
+    toast.success("Code copied!");
+    setTimeout(() => setCopiedCode(null), 2000);
+  };
+
   const handleAccessCodeSubmit = () => {
     if (accessCodeInput.trim()) verifyAccessCode(accessCodeInput.trim());
   };

@@ -1,82 +1,82 @@
 {
   "summary": {
     "total_tests": 12,
-    "passed_tests": 12,
-    "success_rate": 1.0,
-    "timestamp": "2026-01-24T16:49:20.784122"
+    "passed_tests": 10,
+    "success_rate": 0.8333333333333334,
+    "timestamp": "2026-01-24T17:09:05.654540"
   },
   "test_results": [
     {
       "test": "API Root",
       "status": "PASS",
       "details": "Status: 200, Message: Stashorra API - Phone Price Estimator",
-      "timestamp": "2026-01-24T16:49:19.463878"
+      "timestamp": "2026-01-24T17:09:04.857914"
     },
     {
       "test": "Popular Phones",
       "status": "PASS",
-      "details": "Status: 200, Brands: 12, Apple: True, Samsung: True",
-      "timestamp": "2026-01-24T16:49:19.510574"
+      "details": "Status: 200, Brands: 78, Apple: True, Samsung: True",
+      "timestamp": "2026-01-24T17:09:04.896111"
     },
     {
       "test": "Condition Questions (Apple)",
-      "status": "PASS",
-      "details": "Status: 200, Questions: 13, Face ID: True, iCloud: True, True Tone: True",
-      "timestamp": "2026-01-24T16:49:19.548820"
+      "status": "FAIL",
+      "details": "Status: 404",
+      "timestamp": "2026-01-24T17:09:04.934668"
     },
     {
       "test": "Condition Questions (Tecno)",
-      "status": "PASS",
-      "details": "Status: 200, Questions: 11, Fingerprint: True, FRP: True, Charging: True",
-      "timestamp": "2026-01-24T16:49:19.587336"
+      "status": "FAIL",
+      "details": "Status: 404",
+      "timestamp": "2026-01-24T17:09:04.983647"
     },
     {
       "test": "Search Phone",
       "status": "PASS",
       "details": "Status: 200, New: 1 prices, Used: 1 prices",
-      "timestamp": "2026-01-24T16:49:20.099342"
+      "timestamp": "2026-01-24T17:09:05.203091"
     },
     {
       "test": "Search Phone",
       "status": "PASS",
       "details": "Status: 200, New: 1 prices, Used: 1 prices",
-      "timestamp": "2026-01-24T16:49:20.516222"
+      "timestamp": "2026-01-24T17:09:05.320823"
     },
     {
       "test": "Estimate Price",
       "status": "PASS",
-      "details": "Status: 200, Price: \u20a6891,000, Confidence: high",
-      "timestamp": "2026-01-24T16:49:20.555272"
+      "details": "Status: 200, Price: \u20a6885,000, Confidence: high",
+      "timestamp": "2026-01-24T17:09:05.370011"
     },
     {
       "test": "Estimate Price",
       "status": "PASS",
-      "details": "Status: 200, Price: \u20a6108,700, Confidence: high",
-      "timestamp": "2026-01-24T16:49:20.592683"
+      "details": "Status: 200, Price: \u20a6108,000, Confidence: high",
+      "timestamp": "2026-01-24T17:09:05.411838"
     },
     {
       "test": "Estimate Price - iPhone with iCloud Lock",
       "status": "PASS",
-      "details": "Status: 200, Price: \u20a6607,000, Confidence: high",
-      "timestamp": "2026-01-24T16:49:20.668675"
+      "details": "Status: 200, Price: \u20a6584,000, Confidence: high",
+      "timestamp": "2026-01-24T17:09:05.456089"
     },
     {
       "test": "Estimate Price - Android with FRP Lock",
       "status": "PASS",
-      "details": "Status: 200, Price: \u20a6763,600, Confidence: high",
-      "timestamp": "2026-01-24T16:49:20.708630"
+      "details": "Status: 200, Price: \u20a6753,000, Confidence: high",
+      "timestamp": "2026-01-24T17:09:05.533216"
     },
     {
       "test": "Estimate Price - Tecno with Poor Condition",
       "status": "PASS",
-      "details": "Status: 200, Price: \u20a682,500, Confidence: high",
-      "timestamp": "2026-01-24T16:49:20.745242"
+      "details": "Status: 200, Price: \u20a678,000, Confidence: high",
+      "timestamp": "2026-01-24T17:09:05.614370"
     },
     {
       "test": "Estimates History",
       "status": "PASS",
       "details": "Status: 200, Estimates: 10",
-      "timestamp": "2026-01-24T16:49:20.783279"
+      "timestamp": "2026-01-24T17:09:05.653669"
     }
   ]
 }

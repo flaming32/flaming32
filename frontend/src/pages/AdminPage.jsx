@@ -91,10 +91,11 @@ export default function AdminPage() {
   const generateCode = async () => {
     setIsGenerating(true);
     try {
-      const response = await axios.post(`${API}/admin/generate-code`, 
-        { note: newCodeNote },
-        { params: { username, password } }
-      );
+      const response = await axios.post(`${API}/admin/generate-code`, {
+        username,
+        password,
+        note: newCodeNote
+      });
       toast.success(`Code generated: ${response.data.code}`);
       setNewCodeNote("");
       fetchCodes();

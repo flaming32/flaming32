@@ -1,0 +1,171 @@
+<analysis>**original_problem_statement:**
+The user wants to build a phone price estimation application called Stashorra.
+The application should:
+1.  Compare the price of a new phone from  with a used version from .
+2.  Use AI to provide a price estimate based on the phone's condition, as described by the user.
+3.  The business name to be used is Stashorra.
+
+PRODUCT REQUIREMENTS:
+- Extensive, searchable list of phone brands and models.
+- Differentiated evaluation questions for different phones (e.g., iPhone vs. Android, Face ID vs. Touch ID).
+- A payment system where users pay a fee (₦400 for 2 uses) to get an access code.
+- Admin panel () to generate these access codes.
+- A Reseller Package for bulk access codes. A reseller enters a master code to see a list of 20 sub-codes to distribute.
+- An AI-powered estimate for models not in the list (custom user input).
+- Email notifications to the admin when a payment is made.
+- Light/dark mode toggle.
+
+**User's preferred language**: English
+
+**what currently exists?**
+A full-stack application with a React frontend and FastAPI backend is in place. Key features include a brand/model selector, detailed condition-based evaluation, an AI price estimation engine, and a complete payment/access code system. An admin panel is available at  for generating single-use and special reseller master codes. The UI includes a searchable brand list, custom model input, and a light/dark mode toggle. The core web scraping functionality is currently mocked with static data due to anti-bot measures.
+
+**Last working item**:
+-   **Last item agent was working:** The agent was fixing a bug reported by the user where the reseller functionality was not working as expected. After a reseller enters their master code, the system fails to load the corresponding 20 new sub-codes for them to use.
+-   **Status:** IN PROGRESS
+-   **Agent Testing Done:** N
+-   **Which testing method agent to use?** both
+-   **User Testing Done:** Y
+
+**All Pending/In progress Issue list**:
+-   **Issue 1:** Reseller codes do not load new ones. (Priority: P0)
+
+**Issues Detail:**
+-   **Issue 1: Reseller codes do not load new ones.**
+    -   **Attempted fixes:** The agent modified  to create master and sub-codes,  for the generation UI, and  for the reseller input form. However, the user reports that after entering a master code, the list of 20 sub-codes is not displayed or refreshed correctly.
+    -   **Next debug checklist:**
+        1.  **Backend ():**
+            -   Review the  endpoint. Ensure it correctly queries the database for sub-codes linked to the provided master code.
+            -   Verify the logic in . Confirm that it generates one master code and 20 sub-codes, properly linking them in the database (e.g., via a  field).
+        2.  **Frontend ():**
+            -   Trace the state management for when a reseller submits a master code. Check if the API call to  is being made correctly.
+            -   Debug the component's state to see if the list of 20 codes is received from the backend and if the state is updated.
+            -   Inspect the rendering logic to ensure it correctly maps over the codes array to display the list.
+    -   **Why fix this issue and what will be achieved with the fix?** The reseller package is a key monetization feature requested by the user and is essential for power users.
+    -   **Status:** IN PROGRESS
+    -   **Is recurring issue?** N
+    -   **Should Test frontend/backend/both after fix?** both
+    -   **Blocked on other issue:** None
+
+**In progress Task List**:
+There are no other tasks in progress; the focus is on the bug fix above.
+
+**Upcoming and Future Tasks**
+
+-   **Upcoming Tasks:**
+    -   **P1: Populate Phone Models:** Many phone brands in the list lack corresponding models. The agent needs to research and add this data to the  dictionary in .
+    -   **P2: Implement AI for Custom Models:** The feature for users to input a custom phone model exists, but the backend needs logic to handle these requests and provide an AI-generated price estimate without pre-existing data.
+    -   **P3: Add Email Notifications:** Integrate the Resend email service (playbook already retrieved) to automatically notify  when an access code is purchased. This requires modifying the backend code-generation endpoints.
+
+-   **Future Tasks:**
+    -   **Bulk Upload for Resellers:** A feature allowing resellers to upload a list of phones to get bulk estimates.
+    -   **Price Alerts:** A system to notify users when the market value of a specific phone model changes.
+
+**Completed work in this session**
+-   **Recently completed:**
+    -   Payment system with access codes implemented.
+    -   Admin panel created at  for generating single-use and reseller codes.
+    -   Reseller package feature added (currently buggy).
+    -   Phone brand list expanded to 78 brands and made searchable.
+    -   Custom model input field added.
+    -   AI pricing logic refined for more realistic reseller prices.
+    -   Condition questions now adapt based on the phone's biometric features (Face ID vs. Touch ID).
+    -   Light/Dark mode toggle implemented.
+    -   Skip button added to condition questions.
+    -   Admin page link and reseller code input added to the landing page.
+
+**Earlier issues found/mentioned but not fixed**
+-   **Issue 1: Web Scraping is Unreliable**
+    -   **Debug checklist:** The initial attempt to scrape  and  was blocked by anti-bot measures. The current implementation uses a hardcoded dictionary of reference prices in  as a workaround. To fix this, the agent should investigate more robust scraping techniques, such as using a headless browser library (e.g., Playwright) or a proxy rotation service.
+    -   **Why to solve this issue and what will be achieved with this?** The core user request is to get real-time price comparisons. The current static data will become outdated.
+    -   **Should Test frontend/backend/both after fix:** backend
+    -   **Is recurring issue?** Y
+
+**Known issue recurrence from previous fork**
+-   None.
+
+**Code Architecture**
+
+
+**Key Technical Concepts**
+-   **Backend:** FastAPI, Pydantic, MongoDB ()
+-   **Frontend:** React, TailwindCSS, Shadcn/UI, 
+-   **AI:** OpenAI API accessed via  library using the Emergent LLM Key.
+-   **Architecture:** Full-stack monolith with a React SPA consuming a FastAPI backend.
+
+**key DB schema**
+-   ** collection (inferred):**
+    -   : string (unique code)
+    -   : integer
+    -   : boolean
+    -   : string (links a sub-code to its master)
+    -   : datetime
+
+**changes in tech stack**
+-   None.
+
+**All files of reference**
+-   : The single source of all backend logic. Contains API endpoints, database models, AI estimation logic, hardcoded phone data, and access code management.
+-   : The primary user interface for starting the estimation process, handling payments, and entering reseller codes.
+-   : The UI for the admin to manage access codes.
+-   : The root of the React application, managing routing and global state.
+-   : Contains CSS variables for the light/dark theme.
+-   : The living document outlining project requirements and progress.
+
+**Areas that need refactoring**:
+-   The  file has grown too large. It should be broken down into smaller, more focused modules (e.g., for routes, database models, and services).
+-   The extensive phone brand, model, and question data is hardcoded within . This data should be moved to separate JSON configuration files or a dedicated database collection for easier maintenance and scalability.
+
+**key api endpoints**
+-   : Authenticates the admin.
+-   : Creates a standard access code.
+-   : Creates a reseller master code and its 20 sub-codes.
+-   : Retrieves the 20 sub-codes for a given master code.
+-   : The main endpoint for calculating a phone's price, requires a valid access code.
+-   : Returns the list of all phone brands.
+-   : Returns the evaluation questions for a specific phone model.
+
+**Critical Info for New Agent**
+-   The core web scraping functionality is mocked. The app does not fetch live data but relies on hardcoded prices in  due to anti-bot measures on the target sites.
+-   The application is monetized through an access code system. The primary user flow is blocked until a valid code is entered.
+-   An admin panel is available at  with credentials: username , password .
+-   The immediate priority is to fix the **broken reseller functionality**, where entering a master code fails to display the associated 20 sub-codes.
+
+**documents and test reports created in this job**
+-   
+-   
+-   
+-   
+-   
+-   
+
+**Last 10 User Messages and any pending HUMAN messages**
+1.  **Request (features):** Add email notifications, reseller bulk packages, admin page link, and light/dark mode. Fetch more phone models.
+2.  **Request (fixes/features):** Fix light/dark mode. Add a 'skip' button to questions. Create a separate section for reseller codes in the admin panel. Add a button on the main page for resellers to access their codes.
+3.  **Clarification:** User re-emphasized the need for the reseller code section and access button.
+4.  **Clarification (reseller logic):** A reseller master code should unlock a list of 20 individual codes for the reseller to distribute.
+5.  **Bug Report:** resellers code refuses to load new ones resolve this - **This is the current high-priority issue.**
+
+**Project Health Check:**
+-   **Broken:** The reseller code feature is non-functional.
+-   **Mocked:** The web scraping feature for fetching live prices is mocked with static data.
+
+**3rd Party Integrations**
+-   **OpenAI GPT-4:** Used for AI price estimation. Integration is active and uses the **Emergent LLM Key**.
+-   **Resend:** Planned for email notifications. Playbook has been retrieved, but implementation is pending. Requires a **User API Key**.
+
+**Testing status**
+-   **Testing agent used after significant changes:** YES
+-   **Troubleshoot agent used after agent stuck in loop:** NO
+-   **Test files created:** None. The  was used for all automated testing.
+-   **Known regressions:** The newly implemented reseller feature is broken.
+
+**Credentials to test flow:**
+-   **Admin Panel URL:** 
+-   **Username:** 
+-   **Password:** 
+
+**What agent forgot to execute**
+-   The agent has not yet implemented the Resend integration for email notifications.
+-   The agent has not populated the phone models for the majority of the newly added brands.
+-   The AI estimation logic for custom, user-inputted models has not been implemented.</analysis>

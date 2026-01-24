@@ -97,19 +97,48 @@ class StashorraAPITester:
             self.log_test("Search Phone", False, f"Error: {str(e)}")
             return False, {}
 
-    def test_estimate_price(self, brand="Apple", model="iPhone 15", slot_price=1200000, jiji_prices=[800000, 900000]):
+    def test_estimate_price(self, brand="Apple", model="iPhone 15", new_price=1400000, used_price=900000):
         """Test /api/estimate-price endpoint"""
         try:
+            # iPhone condition payload
+            if brand == "Apple":
+                condition = {
+                    "screen_condition": "good",
+                    "body_condition": "good", 
+                    "battery_health": "excellent",
+                    "speakers_working": "yes",
+                    "cameras_working": "all_working",
+                    "buttons_working": "all_working",
+                    "network_status": "unlocked",
+                    "original_parts": "yes",
+                    "face_id_working": "yes",
+                    "touch_id_working": "not_applicable",
+                    "icloud_status": "unlocked",
+                    "back_glass_condition": "intact",
+                    "true_tone_working": "yes"
+                }
+            else:
+                # Android condition payload
+                condition = {
+                    "screen_condition": "good",
+                    "body_condition": "good",
+                    "battery_health": "excellent", 
+                    "speakers_working": "yes",
+                    "cameras_working": "all_working",
+                    "buttons_working": "all_working",
+                    "network_status": "unlocked",
+                    "original_parts": "yes",
+                    "fingerprint_working": "yes",
+                    "frp_status": "unlocked",
+                    "charging_port": "excellent"
+                }
+            
             payload = {
                 "brand": brand,
                 "model": model,
-                "condition": {
-                    "screen_condition": "good",
-                    "battery_health": "excellent", 
-                    "physical_damage": "minor"
-                },
-                "slot_price": slot_price,
-                "jiji_prices": jiji_prices
+                "condition": condition,
+                "new_price": new_price,
+                "used_price": used_price
             }
             
             response = requests.post(

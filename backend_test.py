@@ -320,13 +320,21 @@ class StashorraAPITester:
             return False
             
         # Test core endpoints
-        self.test_popular_phones()
+        popular_success, popular_data = self.test_popular_phones()
+        
+        # Test condition questions for both iPhone and Android
+        self.test_condition_questions("Apple")
+        self.test_condition_questions("Tecno")
         
         # Test search with real data
         search_success, search_data = self.test_search_phone("Apple", "iPhone 15")
         
+        # Test Android search
+        self.test_search_phone("Tecno", "Camon 20")
+        
         # Test estimation
         self.test_estimate_price()
+        self.test_estimate_price("Tecno", "Camon 20", 180000, 110000)
         self.test_estimate_price_edge_cases()
         
         # Test history

@@ -5,15 +5,16 @@ import { Toaster } from "@/components/ui/sonner";
 import LandingPage from "@/pages/LandingPage";
 import EstimatePage from "@/pages/EstimatePage";
 import ResultsPage from "@/pages/ResultsPage";
+import AdminPage from "@/pages/AdminPage";
 
 function App() {
   const [phoneData, setPhoneData] = useState(null);
   const [scrapedPrices, setScrapedPrices] = useState(null);
   const [estimate, setEstimate] = useState(null);
+  const [accessCode, setAccessCode] = useState("");
 
   return (
     <div className="app-container">
-      {/* Noise texture overlay */}
       <div className="noise-texture" />
       
       <BrowserRouter>
@@ -24,6 +25,8 @@ function App() {
               <LandingPage 
                 setPhoneData={setPhoneData}
                 setScrapedPrices={setScrapedPrices}
+                accessCode={accessCode}
+                setAccessCode={setAccessCode}
               />
             } 
           />
@@ -34,6 +37,7 @@ function App() {
                 phoneData={phoneData}
                 scrapedPrices={scrapedPrices}
                 setEstimate={setEstimate}
+                accessCode={accessCode}
               />
             } 
           />
@@ -46,6 +50,10 @@ function App() {
                 estimate={estimate}
               />
             } 
+          />
+          <Route 
+            path="/admin" 
+            element={<AdminPage />} 
           />
         </Routes>
       </BrowserRouter>

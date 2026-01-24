@@ -1,74 +1,78 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, Loader2, Smartphone, Battery, Shield } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, ArrowRight, Loader2, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import axios from "axios";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-const conditionOptions = {
-  screen: [
-    { value: "excellent", label: "Excellent", desc: "No scratches, perfect display" },
-    { value: "good", label: "Good", desc: "Minor scratches, not visible when on" },
-    { value: "fair", label: "Fair", desc: "Visible scratches or minor cracks" },
-    { value: "poor", label: "Poor", desc: "Cracked or damaged display" },
-  ],
-  battery: [
-    { value: "excellent", label: "Excellent", desc: "90-100% health" },
-    { value: "good", label: "Good", desc: "80-89% health" },
-    { value: "fair", label: "Fair", desc: "70-79% health" },
-    { value: "poor", label: "Poor", desc: "Below 70% health" },
-  ],
-  damage: [
-    { value: "none", label: "None", desc: "No physical damage" },
-    { value: "minor", label: "Minor", desc: "Small dents or scratches" },
-    { value: "moderate", label: "Moderate", desc: "Noticeable dents or cracks" },
-    { value: "severe", label: "Severe", desc: "Major damage affecting use" },
-  ],
-};
-
 export default function EstimatePage({ phoneData, scrapedPrices, setEstimate }) {
   const navigate = useNavigate();
+  const [questions, setQuestions] = useState([]);
   const [currentStep, setCurrentStep] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const [condition, setCondition] = useState({
-    screen_condition: "",
-    battery_health: "",
-    physical_damage: "",
-  });
+  const [answers, setAnswers] = useState({});
 
   useEffect(() => {
     if (!phoneData) {
       navigate("/");
+      return;
     }
+    fetchQuestions();
   }, [phoneData, navigate]);
+
+  const fetchQuestions = async () => {
+    try {
+      const response = await axios.get(`${API}/condition-questions/${phoneData.brand}`);
+      setQuestions(response.data.questions);
+      
+      // Initialize answers with empty values
+      const initialAnswers = {};
+      response.data.questions.forEach(q => {
+        initialAnswers[q.id] = "";
+      });
+      setAnswers(initialAnswers);
+    } catch (error) {
+      console.error("Failed to fetch questions:", error);
+      toast.error("Failed to load assessment questions");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   if (!phoneData) return null;
 
-  const steps = [
-    { key: "screen_condition", title: "Screen Condition", icon: Smartphone, options: conditionOptions.screen },
-    { key: "battery_health", title: "Battery Health", icon: Battery, options: conditionOptions.battery },
-    { key: "physical_damage", title: "Physical Damage", icon: Shield, options: conditionOptions.damage },
-  ];
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="font-mono text-sm text-zinc-400">Loading assessment...</p>
+        </div>
+      </div>
+    );
+  }
 
-  const currentStepData = steps[currentStep];
+  const currentQuestion = questions[currentStep];
+  const progress = ((currentStep + 1) / questions.length) * 100;
 
-  const handleConditionChange = (value) => {
-    setCondition({ ...condition, [currentStepData.key]: value });
+  const handleAnswerChange = (value) => {
+    setAnswers({ ...answers, [currentQuestion.id]: value });
   };
 
   const handleNext = () => {
-    if (!condition[currentStepData.key]) {
+    if (!answers[currentQuestion.id]) {
       toast.error("Please select an option");
       return;
     }
-    if (currentStep < steps.length - 1) {
+    if (currentStep < questions.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
       submitEstimate();
@@ -87,22 +91,24 @@ export default function EstimatePage({ phoneData, scrapedPrices, setEstimate }) 
     setIsSubmitting(true);
     
     try {
-      // Get average prices from scraped data
-      const slotPrices = scrapedPrices?.slot_prices || [];
-      const jijiPrices = scrapedPrices?.jiji_prices || [];
+      // Get prices from scraped data
+      const newPrices = scrapedPrices?.new_prices || [];
+      const usedPrices = scrapedPrices?.used_prices || [];
       
-      const slotAvg = slotPrices.length > 0 
-        ? slotPrices.reduce((sum, p) => sum + (p.price || 0), 0) / slotPrices.length 
+      const newAvg = newPrices.length > 0 
+        ? newPrices.reduce((sum, p) => sum + (p.price || 0), 0) / newPrices.length 
         : null;
       
-      const jijiPriceList = jijiPrices.map(p => p.price).filter(p => p);
+      const usedAvg = usedPrices.length > 0
+        ? usedPrices.reduce((sum, p) => sum + (p.price || 0), 0) / usedPrices.length
+        : null;
 
       const response = await axios.post(`${API}/estimate-price`, {
         brand: phoneData.brand,
         model: phoneData.model,
-        condition: condition,
-        slot_price: slotAvg,
-        jiji_prices: jijiPriceList,
+        condition: answers,
+        new_price: newAvg,
+        used_price: usedAvg,
       });
 
       setEstimate(response.data);
@@ -122,15 +128,16 @@ export default function EstimatePage({ phoneData, scrapedPrices, setEstimate }) 
   };
 
   // Calculate average prices for display
-  const slotAvg = scrapedPrices?.slot_prices?.length > 0
-    ? scrapedPrices.slot_prices.reduce((sum, p) => sum + (p.price || 0), 0) / scrapedPrices.slot_prices.length
+  const newAvg = scrapedPrices?.new_prices?.length > 0
+    ? scrapedPrices.new_prices.reduce((sum, p) => sum + (p.price || 0), 0) / scrapedPrices.new_prices.length
     : null;
   
-  const jijiAvg = scrapedPrices?.jiji_prices?.length > 0
-    ? scrapedPrices.jiji_prices.reduce((sum, p) => sum + (p.price || 0), 0) / scrapedPrices.jiji_prices.length
+  const usedAvg = scrapedPrices?.used_prices?.length > 0
+    ? scrapedPrices.used_prices.reduce((sum, p) => sum + (p.price || 0), 0) / scrapedPrices.used_prices.length
     : null;
 
-  const Icon = currentStepData.icon;
+  // Count answered questions
+  const answeredCount = Object.values(answers).filter(v => v).length;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -144,18 +151,17 @@ export default function EstimatePage({ phoneData, scrapedPrices, setEstimate }) 
           Stashorra
         </button>
         
-        {/* Step Indicators */}
-        <div className="flex gap-2">
-          {steps.map((step, index) => (
-            <div
-              key={step.key}
-              className={`step-indicator ${
-                index === currentStep ? "active" : index < currentStep ? "completed" : ""
-              }`}
-            >
-              {index + 1}
-            </div>
-          ))}
+        {/* Progress indicator */}
+        <div className="flex items-center gap-4">
+          <span className="font-mono text-xs text-zinc-500">
+            {currentStep + 1} / {questions.length}
+          </span>
+          <div className="w-32 h-1 bg-zinc-800 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-white transition-all duration-300"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
         </div>
       </header>
 
@@ -170,131 +176,117 @@ export default function EstimatePage({ phoneData, scrapedPrices, setEstimate }) 
             <h2 className="font-headings font-bold text-3xl mb-2">
               {phoneData.brand}
             </h2>
-            <p className="font-headings text-xl text-zinc-400 mb-8">
+            <p className="font-headings text-xl text-zinc-400 mb-2">
               {phoneData.model}
             </p>
+            <span className={`font-mono text-xs px-2 py-1 ${phoneData.type === 'iphone' ? 'bg-zinc-800' : 'bg-zinc-800'}`}>
+              {phoneData.type === 'iphone' ? 'iPhone' : 'Android'}
+            </span>
 
             {/* Price References */}
-            <div className="space-y-4">
+            <div className="space-y-4 mt-8">
               <div className="p-4 border border-zinc-800">
                 <div className="font-mono text-xs uppercase tracking-widest text-zinc-500 mb-2">
-                  Slot.ng (New)
+                  New Price
                 </div>
                 <div className="price-display text-2xl">
-                  {formatPrice(slotAvg)}
-                </div>
-                <div className="font-mono text-xs text-zinc-600 mt-1">
-                  {scrapedPrices?.slot_prices?.length || 0} listings found
+                  {formatPrice(newAvg)}
                 </div>
               </div>
 
               <div className="p-4 border border-zinc-800">
                 <div className="font-mono text-xs uppercase tracking-widest text-zinc-500 mb-2">
-                  Jiji.ng (Used)
+                  Used Market Price
                 </div>
                 <div className="price-display text-2xl">
-                  {formatPrice(jijiAvg)}
-                </div>
-                <div className="font-mono text-xs text-zinc-600 mt-1">
-                  {scrapedPrices?.jiji_prices?.length || 0} listings found
+                  {formatPrice(usedAvg)}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Selected Conditions */}
+          {/* Answered Summary */}
           <div className="mt-8 pt-8 border-t border-zinc-800">
             <div className="font-mono text-xs uppercase tracking-widest text-zinc-500 mb-4">
-              Condition Summary
+              Assessment Progress
             </div>
-            <div className="space-y-2 font-mono text-sm">
-              {condition.screen_condition && (
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Screen:</span>
-                  <span className="capitalize">{condition.screen_condition}</span>
-                </div>
-              )}
-              {condition.battery_health && (
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Battery:</span>
-                  <span className="capitalize">{condition.battery_health}</span>
-                </div>
-              )}
-              {condition.physical_damage && (
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Damage:</span>
-                  <span className="capitalize">{condition.physical_damage}</span>
-                </div>
-              )}
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle className={`h-4 w-4 ${answeredCount === questions.length ? 'text-green-500' : 'text-zinc-600'}`} />
+              <span className="font-mono text-sm">
+                {answeredCount} of {questions.length} questions answered
+              </span>
             </div>
+            <Progress value={(answeredCount / questions.length) * 100} className="h-1" />
           </div>
         </div>
 
-        {/* Right Panel - Form */}
+        {/* Right Panel - Questions */}
         <div className="flex-1 flex flex-col p-6 md:p-12">
-          <motion.div
-            key={currentStep}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3 }}
-            className="flex-1"
-          >
-            <div className="max-w-xl">
-              <div className="flex items-center gap-4 mb-8">
-                <div className="w-12 h-12 border border-zinc-700 flex items-center justify-center">
-                  <Icon className="h-6 w-6" strokeWidth={1.5} />
-                </div>
-                <div>
-                  <div className="font-mono text-xs uppercase tracking-widest text-zinc-500">
-                    Step {currentStep + 1} of {steps.length}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentStep}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3 }}
+              className="flex-1"
+            >
+              <div className="max-w-xl">
+                {/* Question Header */}
+                <div className="mb-8">
+                  <div className="font-mono text-xs uppercase tracking-widest text-zinc-500 mb-2">
+                    Question {currentStep + 1} of {questions.length}
                   </div>
-                  <h1 className="font-headings font-bold text-2xl md:text-3xl">
-                    {currentStepData.title}
+                  <h1 className="font-headings font-bold text-2xl md:text-3xl mb-2">
+                    {currentQuestion.label}
                   </h1>
+                  <p className="text-zinc-400 text-sm">
+                    {currentQuestion.description}
+                  </p>
                 </div>
-              </div>
 
-              <RadioGroup
-                value={condition[currentStepData.key]}
-                onValueChange={handleConditionChange}
-                className="space-y-3"
-              >
-                {currentStepData.options.map((option) => (
-                  <div key={option.value}>
-                    <Label
-                      htmlFor={option.value}
-                      className={`flex items-center p-4 border cursor-pointer transition-all ${
-                        condition[currentStepData.key] === option.value
-                          ? "border-white bg-zinc-900"
-                          : "border-zinc-800 hover:border-zinc-600"
-                      }`}
-                      data-testid={`condition-${currentStepData.key}-${option.value}`}
-                    >
-                      <RadioGroupItem
-                        value={option.value}
-                        id={option.value}
-                        className="sr-only"
-                      />
-                      <div className="flex-1">
-                        <div className="font-headings font-bold">
-                          {option.label}
+                {/* Options */}
+                <RadioGroup
+                  value={answers[currentQuestion.id]}
+                  onValueChange={handleAnswerChange}
+                  className="space-y-3"
+                >
+                  {currentQuestion.options.map((option) => (
+                    <div key={option.value}>
+                      <Label
+                        htmlFor={`${currentQuestion.id}-${option.value}`}
+                        className={`flex items-center p-4 border cursor-pointer transition-all ${
+                          answers[currentQuestion.id] === option.value
+                            ? "border-white bg-zinc-900"
+                            : "border-zinc-800 hover:border-zinc-600"
+                        }`}
+                        data-testid={`option-${currentQuestion.id}-${option.value}`}
+                      >
+                        <RadioGroupItem
+                          value={option.value}
+                          id={`${currentQuestion.id}-${option.value}`}
+                          className="sr-only"
+                        />
+                        <div className="flex-1">
+                          <div className="font-headings font-bold">
+                            {option.label}
+                          </div>
+                          <div className="font-mono text-xs text-zinc-500 mt-1">
+                            {option.desc}
+                          </div>
                         </div>
-                        <div className="font-mono text-xs text-zinc-500 mt-1">
-                          {option.desc}
-                        </div>
-                      </div>
-                      <div className={`w-4 h-4 border ${
-                        condition[currentStepData.key] === option.value
-                          ? "bg-white border-white"
-                          : "border-zinc-600"
-                      }`} />
-                    </Label>
-                  </div>
-                ))}
-              </RadioGroup>
-            </div>
-          </motion.div>
+                        <div className={`w-4 h-4 border ${
+                          answers[currentQuestion.id] === option.value
+                            ? "bg-white border-white"
+                            : "border-zinc-600"
+                        }`} />
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </div>
+            </motion.div>
+          </AnimatePresence>
 
           {/* Mobile Price Info */}
           <div className="lg:hidden mb-6 p-4 border border-zinc-800">
@@ -302,8 +294,8 @@ export default function EstimatePage({ phoneData, scrapedPrices, setEstimate }) 
               {phoneData.brand} {phoneData.model}
             </div>
             <div className="flex justify-between font-mono text-sm">
-              <span>New: {formatPrice(slotAvg)}</span>
-              <span>Used: {formatPrice(jijiAvg)}</span>
+              <span>New: {formatPrice(newAvg)}</span>
+              <span>Used: {formatPrice(usedAvg)}</span>
             </div>
           </div>
 
@@ -321,7 +313,7 @@ export default function EstimatePage({ phoneData, scrapedPrices, setEstimate }) 
 
             <Button
               onClick={handleNext}
-              disabled={!condition[currentStepData.key] || isSubmitting}
+              disabled={!answers[currentQuestion.id] || isSubmitting}
               className="bg-white text-black hover:bg-zinc-200 rounded-none h-12 px-8 font-mono uppercase tracking-wider text-sm disabled:opacity-50"
               data-testid="next-btn"
             >
@@ -330,7 +322,7 @@ export default function EstimatePage({ phoneData, scrapedPrices, setEstimate }) 
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Calculating...
                 </>
-              ) : currentStep === steps.length - 1 ? (
+              ) : currentStep === questions.length - 1 ? (
                 "Get Estimate"
               ) : (
                 <>

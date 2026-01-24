@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Search, Smartphone, Database, Cpu, ChevronRight, Loader2 } from "lucide-react";
+import { Search, Smartphone, Database, Cpu, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import axios from "axios";
@@ -17,6 +16,7 @@ export default function LandingPage({ setPhoneData, setScrapedPrices }) {
   const [selectedBrand, setSelectedBrand] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
   const [models, setModels] = useState([]);
+  const [phoneType, setPhoneType] = useState("android");
   const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
@@ -36,6 +36,7 @@ export default function LandingPage({ setPhoneData, setScrapedPrices }) {
     setSelectedBrand(brand);
     const brandData = brands.find(b => b.name === brand);
     setModels(brandData ? brandData.models : []);
+    setPhoneType(brandData?.type || "android");
     setSelectedModel("");
   };
 
@@ -53,7 +54,11 @@ export default function LandingPage({ setPhoneData, setScrapedPrices }) {
         model: selectedModel
       });
 
-      setPhoneData({ brand: selectedBrand, model: selectedModel });
+      setPhoneData({ 
+        brand: selectedBrand, 
+        model: selectedModel,
+        type: phoneType
+      });
       setScrapedPrices(response.data);
       
       toast.success("Prices fetched successfully!");
@@ -100,7 +105,7 @@ export default function LandingPage({ setPhoneData, setScrapedPrices }) {
 
           <p className="font-body text-base md:text-lg text-zinc-400 max-w-xl mx-auto mb-12">
             Get instant AI-powered price estimates for your used phone. 
-            We compare prices from Slot.ng and Jiji.ng to give you the most accurate valuation.
+            Accurate valuations based on real market data and detailed condition assessment.
           </p>
 
           {/* Search Form */}
@@ -127,14 +132,14 @@ export default function LandingPage({ setPhoneData, setScrapedPrices }) {
                     >
                       <SelectValue placeholder="Select brand" />
                     </SelectTrigger>
-                    <SelectContent className="bg-zinc-900 border-zinc-700 rounded-none">
+                    <SelectContent className="bg-zinc-900 border-zinc-700 rounded-none max-h-[400px]">
                       {brands.map((brand) => (
                         <SelectItem 
                           key={brand.name} 
                           value={brand.name}
                           className="font-headings hover:bg-zinc-800"
                         >
-                          {brand.name}
+                          {brand.name} {brand.type === "iphone" ? "🍎" : ""}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -156,7 +161,7 @@ export default function LandingPage({ setPhoneData, setScrapedPrices }) {
                     >
                       <SelectValue placeholder="Select model" />
                     </SelectTrigger>
-                    <SelectContent className="bg-zinc-900 border-zinc-700 rounded-none max-h-[300px]">
+                    <SelectContent className="bg-zinc-900 border-zinc-700 rounded-none max-h-[400px]">
                       {models.map((model) => (
                         <SelectItem 
                           key={model} 
@@ -180,7 +185,7 @@ export default function LandingPage({ setPhoneData, setScrapedPrices }) {
                 {isSearching ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Searching Prices...
+                    Fetching Prices...
                   </>
                 ) : (
                   <>
@@ -221,9 +226,9 @@ export default function LandingPage({ setPhoneData, setScrapedPrices }) {
               data-testid="feature-scraping"
             >
               <Database className="h-8 w-8 mb-4 text-white" strokeWidth={1.5} />
-              <h3 className="font-headings font-bold text-xl mb-2">Real-Time Scraping</h3>
+              <h3 className="font-headings font-bold text-xl mb-2">Market Data</h3>
               <p className="text-zinc-400 text-sm">
-                We scan Slot.ng for brand new prices and Jiji.ng for used market rates
+                We analyze prices from multiple sources to get accurate new and used market rates
               </p>
             </motion.div>
 
@@ -236,9 +241,9 @@ export default function LandingPage({ setPhoneData, setScrapedPrices }) {
               data-testid="feature-condition"
             >
               <Smartphone className="h-8 w-8 mb-4 text-white" strokeWidth={1.5} />
-              <h3 className="font-headings font-bold text-xl mb-2">Condition Analysis</h3>
+              <h3 className="font-headings font-bold text-xl mb-2">Detailed Assessment</h3>
               <p className="text-zinc-400 text-sm">
-                Input your phone&apos;s screen, battery, and physical condition for accurate pricing
+                Comprehensive questions for iPhone (Face ID, iCloud) and Android (FRP, charging port)
               </p>
             </motion.div>
 
@@ -253,7 +258,7 @@ export default function LandingPage({ setPhoneData, setScrapedPrices }) {
               <Cpu className="h-8 w-8 mb-4 text-white" strokeWidth={1.5} />
               <h3 className="font-headings font-bold text-xl mb-2">AI Estimation</h3>
               <p className="text-zinc-400 text-sm">
-                Our AI analyzes all data points to give you a fair market estimate
+                Our AI analyzes all data points to give you a fair resale estimate
               </p>
             </motion.div>
           </div>

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, RefreshCw, Share2, CheckCircle, AlertCircle, Info } from "lucide-react";
+import { RefreshCw, Share2, CheckCircle, AlertCircle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -31,7 +31,45 @@ export default function ResultsPage({ phoneData, scrapedPrices, estimate }) {
   };
 
   const getConditionLabel = (value) => {
-    return value ? value.charAt(0).toUpperCase() + value.slice(1) : "N/A";
+    if (!value || value === "not_applicable") return null;
+    const labels = {
+      excellent: "Excellent",
+      good: "Good",
+      fair: "Fair",
+      poor: "Poor",
+      cracked: "Cracked",
+      damaged: "Damaged",
+      yes: "Yes",
+      no: "No",
+      unlocked: "Unlocked",
+      locked: "Locked",
+      locked_to_carrier: "Carrier Locked",
+      all_working: "All Working",
+      front_only: "Front Only",
+      back_only: "Back Only",
+      issues: "Has Issues",
+      partial: "Partial",
+      some_issues: "Some Issues",
+      major_issues: "Major Issues",
+      some_replaced: "Some Replaced",
+      mostly_replaced: "Mostly Replaced",
+      loose: "Loose",
+      intact: "Intact"
+    };
+    return labels[value] || value;
+  };
+
+  const getConditionColor = (key, value) => {
+    if (!value || value === "not_applicable") return "";
+    
+    const goodValues = ["excellent", "yes", "unlocked", "all_working", "intact"];
+    const okValues = ["good", "some_replaced", "partial", "some_issues", "front_only", "back_only"];
+    const badValues = ["fair", "poor", "cracked", "damaged", "no", "locked", "locked_to_carrier", "issues", "major_issues", "mostly_replaced", "loose"];
+    
+    if (goodValues.includes(value)) return "text-green-500";
+    if (okValues.includes(value)) return "text-yellow-500";
+    if (badValues.includes(value)) return "text-red-500";
+    return "text-zinc-400";
   };
 
   const handleShare = async () => {
@@ -44,13 +82,58 @@ export default function ResultsPage({ phoneData, scrapedPrices, estimate }) {
         console.log("Share cancelled");
       }
     } else {
-      navigator.clipboard.writeText(text);
-      toast.success("Copied to clipboard!");
+      try {
+        await navigator.clipboard.writeText(text);
+        toast.success("Copied to clipboard!");
+      } catch (err) {
+        toast.error("Failed to copy");
+      }
     }
   };
 
   const handleNewEstimate = () => {
     navigate("/");
+  };
+
+  // Format condition for display - filter out N/A values
+  const condition = estimate.condition || {};
+  const displayConditions = Object.entries(condition).filter(([key, value]) => {
+    return value && value !== "not_applicable" && value !== "";
+  });
+
+  // Group conditions for better display
+  const basicConditions = displayConditions.filter(([key]) => 
+    ["screen_condition", "body_condition", "battery_health", "speakers_working", "cameras_working", "buttons_working"].includes(key)
+  );
+  
+  const securityConditions = displayConditions.filter(([key]) => 
+    ["icloud_status", "frp_status", "network_status"].includes(key)
+  );
+  
+  const otherConditions = displayConditions.filter(([key]) => 
+    !["screen_condition", "body_condition", "battery_health", "speakers_working", "cameras_working", "buttons_working", "icloud_status", "frp_status", "network_status"].includes(key)
+  );
+
+  const formatKeyLabel = (key) => {
+    const labels = {
+      screen_condition: "Screen",
+      body_condition: "Body",
+      battery_health: "Battery",
+      speakers_working: "Speakers",
+      cameras_working: "Cameras",
+      buttons_working: "Buttons",
+      network_status: "Network",
+      original_parts: "Original Parts",
+      face_id_working: "Face ID",
+      touch_id_working: "Touch ID",
+      icloud_status: "iCloud",
+      back_glass_condition: "Back Glass",
+      true_tone_working: "True Tone",
+      fingerprint_working: "Fingerprint",
+      frp_status: "FRP Lock",
+      charging_port: "Charging Port"
+    };
+    return labels[key] || key.replace(/_/g, " ");
   };
 
   return (
@@ -67,63 +150,76 @@ export default function ResultsPage({ phoneData, scrapedPrices, estimate }) {
       </header>
 
       <main className="flex-1 flex flex-col lg:flex-row">
-        {/* Left Panel - Phone Visual */}
-        <div className="lg:w-2/5 bg-zinc-950 p-8 md:p-12 flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-zinc-900">
+        {/* Left Panel - Phone & Condition */}
+        <div className="lg:w-2/5 bg-zinc-950 p-8 md:p-12 border-b lg:border-b-0 lg:border-r border-zinc-900">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
-            className="text-center"
           >
-            {/* Phone Icon/Image */}
-            <div className="w-48 h-48 mx-auto mb-8 border border-zinc-800 flex items-center justify-center bg-zinc-900/50">
-              <div className="text-center">
-                <div className="font-mono text-6xl mb-2">📱</div>
-                <div className="font-mono text-xs text-zinc-500 uppercase tracking-widest">
-                  {phoneData.brand}
+            {/* Phone Info */}
+            <div className="text-center mb-8">
+              <div className="w-32 h-32 mx-auto mb-6 border border-zinc-800 flex items-center justify-center bg-zinc-900/50">
+                <div className="text-center">
+                  <div className="font-mono text-5xl mb-2">📱</div>
                 </div>
               </div>
+
+              <h2 className="font-headings font-bold text-2xl md:text-3xl mb-2">
+                {phoneData.brand} {phoneData.model}
+              </h2>
             </div>
 
-            <h2 className="font-headings font-bold text-2xl md:text-3xl mb-2">
-              {phoneData.brand} {phoneData.model}
-            </h2>
-
-            {/* Condition Summary */}
-            <div className="mt-8 space-y-2 text-left max-w-xs mx-auto">
-              <div className="font-mono text-xs uppercase tracking-widest text-zinc-500 mb-4 text-center">
+            {/* Condition Report */}
+            <div className="space-y-6">
+              <div className="font-mono text-xs uppercase tracking-widest text-zinc-500 text-center">
                 Condition Report
               </div>
-              <div className="flex justify-between font-mono text-sm border-b border-dashed border-zinc-800 pb-2">
-                <span className="text-zinc-500">Screen</span>
-                <span className={`${
-                  estimate.condition.screen_condition === "excellent" ? "text-green-500" :
-                  estimate.condition.screen_condition === "good" ? "text-green-400" :
-                  estimate.condition.screen_condition === "fair" ? "text-yellow-500" : "text-red-500"
-                }`}>
-                  {getConditionLabel(estimate.condition.screen_condition)}
-                </span>
-              </div>
-              <div className="flex justify-between font-mono text-sm border-b border-dashed border-zinc-800 pb-2">
-                <span className="text-zinc-500">Battery</span>
-                <span className={`${
-                  estimate.condition.battery_health === "excellent" ? "text-green-500" :
-                  estimate.condition.battery_health === "good" ? "text-green-400" :
-                  estimate.condition.battery_health === "fair" ? "text-yellow-500" : "text-red-500"
-                }`}>
-                  {getConditionLabel(estimate.condition.battery_health)}
-                </span>
-              </div>
-              <div className="flex justify-between font-mono text-sm">
-                <span className="text-zinc-500">Damage</span>
-                <span className={`${
-                  estimate.condition.physical_damage === "none" ? "text-green-500" :
-                  estimate.condition.physical_damage === "minor" ? "text-green-400" :
-                  estimate.condition.physical_damage === "moderate" ? "text-yellow-500" : "text-red-500"
-                }`}>
-                  {getConditionLabel(estimate.condition.physical_damage)}
-                </span>
-              </div>
+
+              {/* Basic Conditions */}
+              {basicConditions.length > 0 && (
+                <div className="space-y-2">
+                  <div className="font-mono text-xs text-zinc-600 uppercase">Physical</div>
+                  {basicConditions.map(([key, value]) => (
+                    <div key={key} className="flex justify-between font-mono text-sm border-b border-dashed border-zinc-800 pb-2">
+                      <span className="text-zinc-500">{formatKeyLabel(key)}</span>
+                      <span className={getConditionColor(key, value)}>
+                        {getConditionLabel(value)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Security Conditions */}
+              {securityConditions.length > 0 && (
+                <div className="space-y-2">
+                  <div className="font-mono text-xs text-zinc-600 uppercase">Security</div>
+                  {securityConditions.map(([key, value]) => (
+                    <div key={key} className="flex justify-between font-mono text-sm border-b border-dashed border-zinc-800 pb-2">
+                      <span className="text-zinc-500">{formatKeyLabel(key)}</span>
+                      <span className={getConditionColor(key, value)}>
+                        {getConditionLabel(value)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Other Conditions */}
+              {otherConditions.length > 0 && (
+                <div className="space-y-2">
+                  <div className="font-mono text-xs text-zinc-600 uppercase">Other</div>
+                  {otherConditions.map(([key, value]) => (
+                    <div key={key} className="flex justify-between font-mono text-sm border-b border-dashed border-zinc-800 pb-2">
+                      <span className="text-zinc-500">{formatKeyLabel(key)}</span>
+                      <span className={getConditionColor(key, value)}>
+                        {getConditionLabel(value)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </motion.div>
         </div>
@@ -144,7 +240,7 @@ export default function ResultsPage({ phoneData, scrapedPrices, estimate }) {
                   Stashorra
                 </div>
                 <div className="font-mono text-xs text-zinc-500 uppercase tracking-widest">
-                  Price Estimate Receipt
+                  Price Estimate
                 </div>
                 <div className="font-mono text-xs text-zinc-600 mt-1">
                   {new Date().toLocaleDateString("en-NG", {
@@ -159,27 +255,17 @@ export default function ResultsPage({ phoneData, scrapedPrices, estimate }) {
 
               <div className="divider mb-6" />
 
-              {/* Item Details */}
-              <div className="space-y-3 mb-6">
-                <div className="flex justify-between font-mono text-sm">
-                  <span className="text-zinc-500">ITEM</span>
-                  <span>{phoneData.brand} {phoneData.model}</span>
-                </div>
-              </div>
-
-              <div className="divider mb-6" />
-
-              {/* Price Breakdown */}
+              {/* Price References */}
               <div className="space-y-3 mb-6">
                 <div className="font-mono text-xs text-zinc-500 uppercase tracking-widest mb-3">
                   Market Reference
                 </div>
                 <div className="flex justify-between font-mono text-sm">
-                  <span className="text-zinc-400">Slot.ng (New)</span>
+                  <span className="text-zinc-400">New Price</span>
                   <span>{formatPrice(estimate.new_price_avg)}</span>
                 </div>
                 <div className="flex justify-between font-mono text-sm">
-                  <span className="text-zinc-400">Jiji.ng (Used Avg)</span>
+                  <span className="text-zinc-400">Used Market Avg</span>
                   <span>{formatPrice(estimate.used_price_avg)}</span>
                 </div>
               </div>
@@ -189,7 +275,7 @@ export default function ResultsPage({ phoneData, scrapedPrices, estimate }) {
               {/* Final Estimate */}
               <div className="text-center py-6">
                 <div className="font-mono text-xs text-zinc-500 uppercase tracking-widest mb-2">
-                  Estimated Value
+                  Your Phone's Estimated Value
                 </div>
                 <div 
                   className="price-display text-4xl md:text-5xl font-medium"
@@ -231,7 +317,7 @@ export default function ResultsPage({ phoneData, scrapedPrices, estimate }) {
                   Thank you for using Stashorra
                 </div>
                 <div className="font-mono text-xs text-zinc-700 mt-1">
-                  This is an estimate only. Actual prices may vary.
+                  This is an estimate. Actual prices may vary.
                 </div>
               </div>
             </div>
@@ -264,7 +350,7 @@ export default function ResultsPage({ phoneData, scrapedPrices, estimate }) {
       <footer className="border-t border-zinc-900 py-6 px-4">
         <div className="max-w-6xl mx-auto text-center">
           <p className="font-mono text-xs text-zinc-600">
-            Prices scraped from slot.ng and jiji.ng • AI-powered estimation
+            AI-powered phone valuation • Accurate market estimates
           </p>
         </div>
       </footer>

@@ -3,50 +3,50 @@
     "total_tests": 7,
     "passed_tests": 7,
     "success_rate": 1.0,
-    "timestamp": "2026-01-09T22:20:03.270726"
+    "timestamp": "2026-01-24T16:27:47.509690"
   },
   "test_results": [
     {
       "test": "API Root",
       "status": "PASS",
       "details": "Status: 200, Message: Stashorra API - Phone Price Estimator",
-      "timestamp": "2026-01-09T22:20:00.499200"
+      "timestamp": "2026-01-24T16:27:47.015366"
     },
     {
       "test": "Popular Phones",
       "status": "PASS",
       "details": "Status: 200, Brands: 6, Apple: True, Samsung: True",
-      "timestamp": "2026-01-09T22:20:00.533061"
+      "timestamp": "2026-01-24T16:27:47.055018"
     },
     {
       "test": "Search Phone",
       "status": "PASS",
-      "details": "Status: 200, Slot: 0 prices, Jiji: 0 prices",
-      "timestamp": "2026-01-09T22:20:00.976842"
+      "details": "Status: 200, Slot: 1 prices, Jiji: 1 prices",
+      "timestamp": "2026-01-24T16:27:47.350173"
     },
     {
       "test": "Estimate Price",
       "status": "PASS",
       "details": "Status: 200, Price: \u20a6715,000, Confidence: medium",
-      "timestamp": "2026-01-09T22:20:03.106140"
+      "timestamp": "2026-01-24T16:27:47.391824"
     },
     {
       "test": "Estimate Price - No Market Data",
       "status": "PASS",
       "details": "Status: 200, Price: \u20a60",
-      "timestamp": "2026-01-09T22:20:03.145997"
+      "timestamp": "2026-01-24T16:27:47.429032"
     },
     {
       "test": "Estimate Price - Excellent Condition",
       "status": "PASS",
       "details": "Status: 200, Price: \u20a6520,000",
-      "timestamp": "2026-01-09T22:20:03.188338"
+      "timestamp": "2026-01-24T16:27:47.468797"
     },
     {
       "test": "Estimates History",
       "status": "PASS",
-      "details": "Status: 200, Estimates: 3",
-      "timestamp": "2026-01-09T22:20:03.269864"
+      "details": "Status: 200, Estimates: 10",
+      "timestamp": "2026-01-24T16:27:47.508859"
     }
   ]
 }

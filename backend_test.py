@@ -200,31 +200,70 @@ class StashorraAPITester:
         """Test estimate price with edge cases"""
         test_cases = [
             {
-                "name": "No Market Data",
+                "name": "iPhone with iCloud Lock",
                 "payload": {
-                    "brand": "TestBrand",
-                    "model": "TestModel", 
+                    "brand": "Apple",
+                    "model": "iPhone 14", 
                     "condition": {
-                        "screen_condition": "poor",
-                        "battery_health": "poor",
-                        "physical_damage": "severe"
+                        "screen_condition": "good",
+                        "body_condition": "good",
+                        "battery_health": "good",
+                        "speakers_working": "yes",
+                        "cameras_working": "all_working",
+                        "buttons_working": "all_working",
+                        "network_status": "unlocked",
+                        "original_parts": "yes",
+                        "face_id_working": "yes",
+                        "icloud_status": "locked",  # This should significantly reduce price
+                        "back_glass_condition": "intact",
+                        "true_tone_working": "yes"
                     },
-                    "slot_price": None,
-                    "jiji_prices": []
+                    "new_price": 1000000,
+                    "used_price": 650000
                 }
             },
             {
-                "name": "Excellent Condition",
+                "name": "Android with FRP Lock",
                 "payload": {
                     "brand": "Samsung",
                     "model": "Galaxy S24",
                     "condition": {
                         "screen_condition": "excellent", 
+                        "body_condition": "excellent",
                         "battery_health": "excellent",
-                        "physical_damage": "none"
+                        "speakers_working": "yes",
+                        "cameras_working": "all_working",
+                        "buttons_working": "all_working",
+                        "network_status": "unlocked",
+                        "original_parts": "yes",
+                        "fingerprint_working": "yes",
+                        "frp_status": "locked",  # This should significantly reduce price
+                        "charging_port": "excellent"
                     },
-                    "slot_price": 800000,
-                    "jiji_prices": [600000, 650000, 700000]
+                    "new_price": 1200000,
+                    "used_price": 800000
+                }
+            },
+            {
+                "name": "Tecno with Poor Condition",
+                "payload": {
+                    "brand": "Tecno",
+                    "model": "Camon 20",
+                    "condition": {
+                        "screen_condition": "cracked",
+                        "body_condition": "damaged",
+                        "battery_health": "poor",
+                        "speakers_working": "no",
+                        "cameras_working": "issues",
+                        "buttons_working": "major_issues",
+                        "network_status": "locked_to_carrier",
+                        "original_parts": "mostly_replaced",
+                        "fingerprint_working": "no",
+                        "frp_status": "unlocked",
+                        "charging_port": "damaged"
+                    },
+                    "new_price": 180000,
+                    "used_price": 110000
                 }
             }
         ]
@@ -241,7 +280,8 @@ class StashorraAPITester:
                 if success:
                     data = response.json()
                     price = data.get('estimated_price', 0)
-                    details = f"Status: {response.status_code}, Price: ₦{price:,.0f}"
+                    confidence = data.get('confidence', 'unknown')
+                    details = f"Status: {response.status_code}, Price: ₦{price:,.0f}, Confidence: {confidence}"
                 else:
                     details = f"Status: {response.status_code}"
                     

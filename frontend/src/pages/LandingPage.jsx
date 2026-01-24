@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Search, Smartphone, Database, Cpu, Loader2 } from "lucide-react";
+import { Search, Smartphone, Database, Cpu, Loader2, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import axios from "axios";
 
@@ -15,9 +17,13 @@ export default function LandingPage({ setPhoneData, setScrapedPrices }) {
   const [brands, setBrands] = useState([]);
   const [selectedBrand, setSelectedBrand] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
+  const [customModel, setCustomModel] = useState("");
   const [models, setModels] = useState([]);
   const [phoneType, setPhoneType] = useState("android");
   const [isSearching, setIsSearching] = useState(false);
+  const [brandSearch, setBrandSearch] = useState("");
+  const [modelSearch, setModelSearch] = useState("");
+  const [showCustomModelDialog, setShowCustomModelDialog] = useState(false);
 
   useEffect(() => {
     fetchPopularPhones();
@@ -32,17 +38,51 @@ export default function LandingPage({ setPhoneData, setScrapedPrices }) {
     }
   };
 
+  // Filter brands based on search
+  const filteredBrands = useMemo(() => {
+    if (!brandSearch) return brands;
+    return brands.filter(b => 
+      b.name.toLowerCase().includes(brandSearch.toLowerCase())
+    );
+  }, [brands, brandSearch]);
+
+  // Filter models based on search
+  const filteredModels = useMemo(() => {
+    if (!modelSearch) return models;
+    return models.filter(m => 
+      m.toLowerCase().includes(modelSearch.toLowerCase())
+    );
+  }, [models, modelSearch]);
+
   const handleBrandChange = (brand) => {
     setSelectedBrand(brand);
+    setBrandSearch("");
     const brandData = brands.find(b => b.name === brand);
     setModels(brandData ? brandData.models : []);
     setPhoneType(brandData?.type || "android");
     setSelectedModel("");
+    setCustomModel("");
+    setModelSearch("");
+  };
+
+  const handleModelChange = (model) => {
+    setSelectedModel(model);
+    setCustomModel("");
+    setModelSearch("");
+  };
+
+  const handleCustomModelSubmit = () => {
+    if (customModel.trim()) {
+      setSelectedModel(customModel.trim());
+      setShowCustomModelDialog(false);
+    }
   };
 
   const handleSearch = async () => {
-    if (!selectedBrand || !selectedModel) {
-      toast.error("Please select both brand and model");
+    const modelToUse = selectedModel || customModel;
+    
+    if (!selectedBrand || !modelToUse) {
+      toast.error("Please select brand and model");
       return;
     }
 
@@ -51,21 +91,21 @@ export default function LandingPage({ setPhoneData, setScrapedPrices }) {
     try {
       const response = await axios.post(`${API}/search-phone`, {
         brand: selectedBrand,
-        model: selectedModel
+        model: modelToUse
       });
 
       setPhoneData({ 
         brand: selectedBrand, 
-        model: selectedModel,
+        model: modelToUse,
         type: phoneType
       });
       setScrapedPrices(response.data);
       
-      toast.success("Prices fetched successfully!");
+      toast.success("Prices fetched!");
       navigate("/estimate");
     } catch (error) {
       console.error("Search error:", error);
-      toast.error("Failed to fetch prices. Please try again.");
+      toast.error("Failed to fetch prices");
     } finally {
       setIsSearching(false);
     }
@@ -96,7 +136,6 @@ export default function LandingPage({ setPhoneData, setScrapedPrices }) {
           transition={{ duration: 0.6 }}
           className="text-center max-w-4xl mx-auto"
         >
-          {/* Main Headline */}
           <h1 className="font-headings font-black text-5xl sm:text-6xl md:text-7xl lg:text-8xl tracking-tight leading-[0.9] uppercase mb-6">
             What Is It
             <br />
@@ -121,6 +160,7 @@ export default function LandingPage({ setPhoneData, setScrapedPrices }) {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                {/* Brand Selection with Search */}
                 <div>
                   <label className="font-mono text-xs uppercase tracking-widest text-zinc-500 block mb-2">
                     Brand
@@ -133,53 +173,156 @@ export default function LandingPage({ setPhoneData, setScrapedPrices }) {
                       <SelectValue placeholder="Select brand" />
                     </SelectTrigger>
                     <SelectContent className="bg-zinc-900 border-zinc-700 rounded-none max-h-[400px]">
-                      {brands.map((brand) => (
+                      {/* Search Input */}
+                      <div className="p-2 border-b border-zinc-800 sticky top-0 bg-zinc-900 z-10">
+                        <div className="relative">
+                          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                          <Input
+                            placeholder="Search brands..."
+                            value={brandSearch}
+                            onChange={(e) => setBrandSearch(e.target.value)}
+                            className="pl-8 bg-zinc-800 border-zinc-700 rounded-none h-9 text-sm"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
+                      </div>
+                      {filteredBrands.map((brand) => (
                         <SelectItem 
                           key={brand.name} 
                           value={brand.name}
                           className="font-headings hover:bg-zinc-800"
                         >
-                          {brand.name} {brand.type === "iphone" ? "🍎" : ""}
+                          {brand.name}
                         </SelectItem>
                       ))}
+                      {filteredBrands.length === 0 && (
+                        <div className="p-4 text-center text-zinc-500 font-mono text-sm">
+                          No brands found
+                        </div>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
 
+                {/* Model Selection with Search + Custom Input */}
                 <div>
                   <label className="font-mono text-xs uppercase tracking-widest text-zinc-500 block mb-2">
                     Model
                   </label>
-                  <Select 
-                    value={selectedModel} 
-                    onValueChange={setSelectedModel}
-                    disabled={!selectedBrand}
-                  >
-                    <SelectTrigger 
-                      data-testid="model-select"
-                      className="w-full bg-transparent border-zinc-700 hover:border-zinc-500 rounded-none h-12 font-headings disabled:opacity-50"
+                  <div className="flex gap-2">
+                    <Select 
+                      value={selectedModel} 
+                      onValueChange={handleModelChange}
+                      disabled={!selectedBrand}
                     >
-                      <SelectValue placeholder="Select model" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-zinc-900 border-zinc-700 rounded-none max-h-[400px]">
-                      {models.map((model) => (
-                        <SelectItem 
-                          key={model} 
-                          value={model}
-                          className="font-headings hover:bg-zinc-800"
+                      <SelectTrigger 
+                        data-testid="model-select"
+                        className="flex-1 bg-transparent border-zinc-700 hover:border-zinc-500 rounded-none h-12 font-headings disabled:opacity-50"
+                      >
+                        <SelectValue placeholder={customModel || "Select model"} />
+                      </SelectTrigger>
+                      <SelectContent className="bg-zinc-900 border-zinc-700 rounded-none max-h-[400px]">
+                        {/* Search Input */}
+                        <div className="p-2 border-b border-zinc-800 sticky top-0 bg-zinc-900 z-10">
+                          <div className="relative">
+                            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                            <Input
+                              placeholder="Search models..."
+                              value={modelSearch}
+                              onChange={(e) => setModelSearch(e.target.value)}
+                              className="pl-8 bg-zinc-800 border-zinc-700 rounded-none h-9 text-sm"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                        </div>
+                        {filteredModels.length > 0 ? (
+                          filteredModels.map((model) => (
+                            <SelectItem 
+                              key={model} 
+                              value={model}
+                              className="font-headings hover:bg-zinc-800"
+                            >
+                              {model}
+                            </SelectItem>
+                          ))
+                        ) : models.length === 0 ? (
+                          <div className="p-4 text-center text-zinc-500 font-mono text-sm">
+                            No models in database.<br/>Click + to add manually.
+                          </div>
+                        ) : (
+                          <div className="p-4 text-center text-zinc-500 font-mono text-sm">
+                            No models found
+                          </div>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    
+                    {/* Add Custom Model Button */}
+                    <Dialog open={showCustomModelDialog} onOpenChange={setShowCustomModelDialog}>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          disabled={!selectedBrand}
+                          className="bg-transparent border-zinc-700 hover:border-white hover:bg-zinc-800 rounded-none h-12 w-12 p-0 disabled:opacity-50"
+                          data-testid="add-model-btn"
                         >
-                          {model}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                          <Plus className="h-5 w-5" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="bg-zinc-900 border-zinc-800 rounded-none max-w-md">
+                        <DialogHeader>
+                          <DialogTitle className="font-headings text-xl">
+                            Add Custom Model
+                          </DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4 mt-4">
+                          <div>
+                            <label className="font-mono text-xs uppercase tracking-widest text-zinc-500 block mb-2">
+                              Brand: {selectedBrand}
+                            </label>
+                          </div>
+                          <div>
+                            <label className="font-mono text-xs uppercase tracking-widest text-zinc-500 block mb-2">
+                              Model Name
+                            </label>
+                            <Input
+                              placeholder="e.g. Galaxy S25 Ultra"
+                              value={customModel}
+                              onChange={(e) => setCustomModel(e.target.value)}
+                              className="bg-zinc-800 border-zinc-700 rounded-none h-12 font-headings"
+                              data-testid="custom-model-input"
+                            />
+                          </div>
+                          <Button
+                            onClick={handleCustomModelSubmit}
+                            disabled={!customModel.trim()}
+                            className="w-full bg-white text-black hover:bg-zinc-200 rounded-none h-12 font-mono uppercase tracking-wider text-sm"
+                            data-testid="submit-custom-model-btn"
+                          >
+                            Use This Model
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                  {customModel && !selectedModel && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className="font-mono text-xs text-zinc-400">Custom: {customModel}</span>
+                      <button 
+                        onClick={() => setCustomModel("")}
+                        className="text-zinc-500 hover:text-white"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
               <Button
                 data-testid="search-btn"
                 onClick={handleSearch}
-                disabled={isSearching || !selectedBrand || !selectedModel}
+                disabled={isSearching || !selectedBrand || (!selectedModel && !customModel)}
                 className="w-full bg-white text-black hover:bg-zinc-200 rounded-none h-12 font-mono uppercase tracking-wider text-sm transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSearching ? (
@@ -223,12 +366,11 @@ export default function LandingPage({ setPhoneData, setScrapedPrices }) {
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
               className="feature-card"
-              data-testid="feature-scraping"
             >
               <Database className="h-8 w-8 mb-4 text-white" strokeWidth={1.5} />
               <h3 className="font-headings font-bold text-xl mb-2">Market Data</h3>
               <p className="text-zinc-400 text-sm">
-                We analyze prices from multiple sources to get accurate new and used market rates
+                We analyze prices from multiple sources for accurate market rates
               </p>
             </motion.div>
 
@@ -238,7 +380,6 @@ export default function LandingPage({ setPhoneData, setScrapedPrices }) {
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
               className="feature-card"
-              data-testid="feature-condition"
             >
               <Smartphone className="h-8 w-8 mb-4 text-white" strokeWidth={1.5} />
               <h3 className="font-headings font-bold text-xl mb-2">Detailed Assessment</h3>
@@ -253,12 +394,11 @@ export default function LandingPage({ setPhoneData, setScrapedPrices }) {
               viewport={{ once: true }}
               transition={{ delay: 0.3 }}
               className="feature-card"
-              data-testid="feature-ai"
             >
               <Cpu className="h-8 w-8 mb-4 text-white" strokeWidth={1.5} />
               <h3 className="font-headings font-bold text-xl mb-2">AI Estimation</h3>
               <p className="text-zinc-400 text-sm">
-                Our AI analyzes all data points to give you a fair resale estimate
+                Our AI gives you a fair reseller buying price estimate
               </p>
             </motion.div>
           </div>

@@ -15,6 +15,7 @@ const API = `${BACKEND_URL}/api`;
 export default function EstimatePage({ phoneData, scrapedPrices, setEstimate }) {
   const navigate = useNavigate();
   const [questions, setQuestions] = useState([]);
+  const [biometricType, setBiometricType] = useState("fingerprint");
   const [currentStep, setCurrentStep] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,10 +31,11 @@ export default function EstimatePage({ phoneData, scrapedPrices, setEstimate }) 
 
   const fetchQuestions = async () => {
     try {
-      const response = await axios.get(`${API}/condition-questions/${phoneData.brand}`);
+      // Use the new endpoint that takes both brand and model
+      const response = await axios.get(`${API}/condition-questions/${phoneData.brand}/${encodeURIComponent(phoneData.model)}`);
       setQuestions(response.data.questions);
+      setBiometricType(response.data.biometric_type || "fingerprint");
       
-      // Initialize answers with empty values
       const initialAnswers = {};
       response.data.questions.forEach(q => {
         initialAnswers[q.id] = "";
@@ -91,7 +93,6 @@ export default function EstimatePage({ phoneData, scrapedPrices, setEstimate }) 
     setIsSubmitting(true);
     
     try {
-      // Get prices from scraped data
       const newPrices = scrapedPrices?.new_prices || [];
       const usedPrices = scrapedPrices?.used_prices || [];
       
@@ -127,7 +128,6 @@ export default function EstimatePage({ phoneData, scrapedPrices, setEstimate }) 
     return `₦${price.toLocaleString()}`;
   };
 
-  // Calculate average prices for display
   const newAvg = scrapedPrices?.new_prices?.length > 0
     ? scrapedPrices.new_prices.reduce((sum, p) => sum + (p.price || 0), 0) / scrapedPrices.new_prices.length
     : null;
@@ -136,22 +136,18 @@ export default function EstimatePage({ phoneData, scrapedPrices, setEstimate }) 
     ? scrapedPrices.used_prices.reduce((sum, p) => sum + (p.price || 0), 0) / scrapedPrices.used_prices.length
     : null;
 
-  // Count answered questions
   const answeredCount = Object.values(answers).filter(v => v).length;
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Header */}
       <header className="w-full p-6 flex justify-between items-center border-b border-zinc-900">
         <button 
           onClick={() => navigate("/")}
           className="font-brand font-extrabold text-2xl tracking-tighter uppercase hover:text-zinc-400 transition-colors"
-          data-testid="logo-link"
         >
           Stashorra
         </button>
         
-        {/* Progress indicator */}
         <div className="flex items-center gap-4">
           <span className="font-mono text-xs text-zinc-500">
             {currentStep + 1} / {questions.length}
@@ -166,7 +162,7 @@ export default function EstimatePage({ phoneData, scrapedPrices, setEstimate }) 
       </header>
 
       <main className="flex-1 flex">
-        {/* Left Panel - Phone Info */}
+        {/* Left Panel */}
         <div className="hidden lg:flex w-1/3 bg-zinc-950 border-r border-zinc-900 p-8 flex-col">
           <div className="flex-1">
             <div className="font-mono text-xs uppercase tracking-widest text-zinc-500 mb-4">
@@ -179,11 +175,12 @@ export default function EstimatePage({ phoneData, scrapedPrices, setEstimate }) 
             <p className="font-headings text-xl text-zinc-400 mb-2">
               {phoneData.model}
             </p>
-            <span className={`font-mono text-xs px-2 py-1 ${phoneData.type === 'iphone' ? 'bg-zinc-800' : 'bg-zinc-800'}`}>
+            <span className="font-mono text-xs px-2 py-1 bg-zinc-800">
               {phoneData.type === 'iphone' ? 'iPhone' : 'Android'}
+              {biometricType === 'face_id' && ' • Face ID'}
+              {biometricType === 'touch_id' && ' • Touch ID'}
             </span>
 
-            {/* Price References */}
             <div className="space-y-4 mt-8">
               <div className="p-4 border border-zinc-800">
                 <div className="font-mono text-xs uppercase tracking-widest text-zinc-500 mb-2">
@@ -196,7 +193,7 @@ export default function EstimatePage({ phoneData, scrapedPrices, setEstimate }) 
 
               <div className="p-4 border border-zinc-800">
                 <div className="font-mono text-xs uppercase tracking-widest text-zinc-500 mb-2">
-                  Used Market Price
+                  Used Market
                 </div>
                 <div className="price-display text-2xl">
                   {formatPrice(usedAvg)}
@@ -205,22 +202,21 @@ export default function EstimatePage({ phoneData, scrapedPrices, setEstimate }) 
             </div>
           </div>
 
-          {/* Answered Summary */}
           <div className="mt-8 pt-8 border-t border-zinc-800">
             <div className="font-mono text-xs uppercase tracking-widest text-zinc-500 mb-4">
-              Assessment Progress
+              Progress
             </div>
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle className={`h-4 w-4 ${answeredCount === questions.length ? 'text-green-500' : 'text-zinc-600'}`} />
               <span className="font-mono text-sm">
-                {answeredCount} of {questions.length} questions answered
+                {answeredCount} of {questions.length} answered
               </span>
             </div>
             <Progress value={(answeredCount / questions.length) * 100} className="h-1" />
           </div>
         </div>
 
-        {/* Right Panel - Questions */}
+        {/* Right Panel */}
         <div className="flex-1 flex flex-col p-6 md:p-12">
           <AnimatePresence mode="wait">
             <motion.div
@@ -232,7 +228,6 @@ export default function EstimatePage({ phoneData, scrapedPrices, setEstimate }) 
               className="flex-1"
             >
               <div className="max-w-xl">
-                {/* Question Header */}
                 <div className="mb-8">
                   <div className="font-mono text-xs uppercase tracking-widest text-zinc-500 mb-2">
                     Question {currentStep + 1} of {questions.length}
@@ -245,7 +240,6 @@ export default function EstimatePage({ phoneData, scrapedPrices, setEstimate }) 
                   </p>
                 </div>
 
-                {/* Options */}
                 <RadioGroup
                   value={answers[currentQuestion.id]}
                   onValueChange={handleAnswerChange}
@@ -288,7 +282,7 @@ export default function EstimatePage({ phoneData, scrapedPrices, setEstimate }) 
             </motion.div>
           </AnimatePresence>
 
-          {/* Mobile Price Info */}
+          {/* Mobile Info */}
           <div className="lg:hidden mb-6 p-4 border border-zinc-800">
             <div className="font-mono text-xs uppercase tracking-widest text-zinc-500 mb-2">
               {phoneData.brand} {phoneData.model}
@@ -299,13 +293,12 @@ export default function EstimatePage({ phoneData, scrapedPrices, setEstimate }) 
             </div>
           </div>
 
-          {/* Navigation Buttons */}
+          {/* Navigation */}
           <div className="flex justify-between mt-8">
             <Button
               variant="outline"
               onClick={handleBack}
               className="bg-transparent border-zinc-700 hover:border-white hover:bg-transparent rounded-none h-12 px-6 font-mono uppercase tracking-wider text-sm"
-              data-testid="back-btn"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back
@@ -315,7 +308,6 @@ export default function EstimatePage({ phoneData, scrapedPrices, setEstimate }) 
               onClick={handleNext}
               disabled={!answers[currentQuestion.id] || isSubmitting}
               className="bg-white text-black hover:bg-zinc-200 rounded-none h-12 px-8 font-mono uppercase tracking-wider text-sm disabled:opacity-50"
-              data-testid="next-btn"
             >
               {isSubmitting ? (
                 <>

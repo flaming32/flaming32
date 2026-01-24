@@ -1,60 +1,45 @@
 # Stashorra - Phone Price Estimator PRD
 
 ## Original Problem Statement
-Build a phone estimated price calculator app using information of a brand new one comparing it to the used version. Then use AI to give a rough estimate after analyzing the information given by the user about the condition of the phone.
+Build a phone estimated price calculator app. Use AI to give a rough estimate after analyzing the condition of the phone. Prices should reflect what a reseller would pay (lower because they need profit margin and repair costs).
 
-## User Choices & Updates
-- AI Integration: Emergent LLM key (OpenAI)
-- Data Sources: Jiji.ng for iPhone used prices, Slot.ng for Android new prices
-- Condition Input: Comprehensive (13 questions for iPhone, 11 for Android)
-- Theme: Black and white
-- Logo: "Stashorra" text
-- Remove data source labels from UI
+## Latest Updates (December 2025)
+- 78 brands alphabetically sorted with search functionality
+- Custom model input for phones not in database
+- iPhone biometric detection: Touch ID for iPhone 8 and older, Face ID for iPhone X and newer
+- Android: fingerprint + face unlock questions
+- Lower, realistic reseller buying prices
+- Removed data source labels from UI
 
 ## User Personas
-1. **Phone Sellers** - People wanting to sell their used phones and need fair pricing
-2. **Phone Buyers** - People looking to buy used phones and want to verify prices
-3. **Phone Traders** - Business owners who trade phones regularly
+1. **Phone Sellers** - People selling used phones who need fair reseller pricing
+2. **Phone Buyers** - People verifying prices before buying used
+3. **Phone Resellers** - Business owners who trade phones
 
-## Core Requirements
-- Phone brand/model selection from 12 major brands (165+ models)
-- Price comparison between new and used markets
-- Detailed condition assessment based on phone type
-- AI-powered price estimation
-- Receipt-style result display
+## All 78 Brands (Alphabetically)
+AGM, Alcatel, Allview, Apple, Archos, Asus, Asus ROG, BQ, Benco, Black Shark, Blackview, Blu, Cat, Cherry Mobile, Condor, Coolpad, Doogee, Doro, Energizer, Essential, Fairphone, Fujitsu, General Mobile, Gionee, Google, Google Pixel, HMD, HMD Global, HTC, Hisense, Honor, Huawei, Infinix, Inoi, Intex, Itel, iQOO, Kyocera, LG, Lava, LeEco, Lenovo, Maxwest, Meizu, Micromax, Motorola, NEC, Nokia, Nubia, OnePlus, Oppo, Palm, Panasonic, Philips, Poco, Prestigio, QMobile, Razer, Realme, Redmi, Samsung, Sharp, Sico, Sony, Symphony, TCL, Tecno, Transsion, Ulefone, Umidigi, Vertu, Vivo, Vsmart, Wiko, Xiaomi, ZTE, ZUK, myPhone
 
-## What's Been Implemented (December 2025)
+## iPhone Biometric Detection
+- **Face ID models**: iPhone X, XS, XS Max, XR, 11 series, 12 series, 13 series, 14 series, 15 series
+- **Touch ID models**: iPhone SE (all), iPhone 8/8 Plus, iPhone 7/7 Plus, iPhone 6s/6s Plus, iPhone 6/6 Plus
 
-### Brands & Models (165+ total)
-- Apple (25 models) - iPhone 15 Pro Max down to iPhone SE
-- Samsung (23 models) - Galaxy S24 Ultra to Galaxy A04
-- Tecno (21 models) - Phantom X2 to Pop 7
-- Infinix (16 models) - Zero 30 to Smart 7
-- Itel (11 models) - S24 to A50
-- Xiaomi (20 models) - 14 Ultra to POCO C65
-- Google (9 models) - Pixel 8 Pro to Pixel 6a
-- OnePlus (7 models) - 12 to Nord N30
-- Oppo (11 models) - Find X7 Ultra to A18
-- Vivo (8 models) - X100 Pro to Y27
-- Realme (9 models) - GT 5 Pro to Note 50
-- Nokia (5 models) - G42 to C12
+## Condition Assessment
 
-### iPhone Assessment (13 Questions)
+### iPhone Questions (12 total)
 1. Screen Condition
-2. Body/Frame Condition
+2. Body/Frame Condition  
 3. Battery Health
 4. Speakers & Earpiece
 5. Cameras
 6. Physical Buttons
 7. Network Lock Status
 8. Original Parts
-9. **Face ID** (critical for value)
-10. **Touch ID**
-11. **iCloud Lock Status** (CRITICAL - locked = major value loss)
-12. **Back Glass**
-13. **True Tone Display**
+9. **Face ID OR Touch ID** (based on model)
+10. **iCloud Lock Status** (CRITICAL)
+11. Back Glass
+12. True Tone Display
 
-### Android Assessment (11 Questions)
+### Android Questions (12 total)
 1. Screen Condition
 2. Body/Frame Condition
 3. Battery Health
@@ -64,59 +49,44 @@ Build a phone estimated price calculator app using information of a brand new on
 7. Network Lock Status
 8. Original Parts
 9. **Fingerprint Sensor**
-10. **FRP (Google Lock) Status** (CRITICAL - locked = major value loss)
-11. **Charging Port Condition**
+10. **Face Unlock**
+11. **FRP (Google Lock) Status** (CRITICAL)
+12. Charging Port Condition
 
-### Features Implemented
-- [x] Dynamic condition questions based on phone type
-- [x] AI price estimation with detailed condition analysis
-- [x] Receipt-style results page
-- [x] Condition report with color-coded status
-- [x] Share functionality
-- [x] Mobile responsive design
-- [x] Progress indicator during assessment
+## Pricing Philosophy
+- Prices reflect **RESELLER BUYING PRICE** (what a vendor would pay)
+- Resellers need 20-30% profit margin + repair costs
+- Used phones: ~40-50% of new price for good condition
+- iCloud locked = 90% value loss
+- FRP locked = 70% value loss
+- Cracked screen = 40-50% reduction
+- Poor battery = 25-35% reduction
+- Non-working biometrics = 30-40% reduction
+
+## Features Implemented
+- [x] 78 brands with search functionality
+- [x] Custom model input (+ button)
+- [x] Model search within brand
+- [x] Biometric detection by iPhone model
+- [x] Face Unlock question for Android
+- [x] Realistic reseller pricing
+- [x] AI-powered estimation
+- [x] Receipt-style results
 
 ## Architecture
 - **Frontend**: React + Tailwind CSS + Shadcn/UI + Framer Motion
 - **Backend**: FastAPI + Motor (async MongoDB)
 - **AI**: OpenAI via Emergent Integrations
-- **Data**: Reference prices (165+ phone models)
 
 ## API Endpoints
-- `GET /api/popular-phones` - Returns 12 brands with type info
-- `GET /api/condition-questions/{brand}` - Dynamic questions
-- `POST /api/search-phone` - Fetches price references
-- `POST /api/estimate-price` - AI-powered estimation
-- `GET /api/estimates` - Estimate history
-
-## Valuation Rules (Built into AI)
-1. Used phones ALWAYS priced lower than new
-2. iCloud locked iPhones lose 60-70% value
-3. Cracked screens reduce value by 30-50%
-4. Poor battery (<70%) reduces value by 20-30%
-5. Non-working Face ID/Touch ID reduces iPhone value by 25-35%
-6. FRP locked Androids lose 40-50% value
-7. Non-original parts reduce value by 15-25%
-
-## Prioritized Backlog
-
-### P0 (Critical) - DONE
-- [x] 12 brands with 165+ models
-- [x] iPhone-specific questions (13)
-- [x] Android-specific questions (11)
-- [x] AI estimation with detailed condition
-
-### P1 (Important)
-- [ ] Live web scraping when sites allow
-- [ ] Price history tracking
-- [ ] User authentication
-
-### P2 (Nice to Have)
-- [ ] Image upload for condition assessment
-- [ ] Price trend charts
-- [ ] Multi-language support
+- `GET /api/brands` - All 78 brands
+- `GET /api/popular-phones` - Brands with known models
+- `GET /api/condition-questions/{brand}/{model}` - Dynamic questions
+- `POST /api/search-phone` - Fetch prices
+- `POST /api/estimate-price` - AI estimation
+- `GET /api/estimates` - History
 
 ## Next Tasks
-1. Add more models as new phones release
-2. Implement user accounts
-3. Add price trend visualization
+1. Add more models to reference database
+2. User accounts for saved estimates
+3. Price history tracking

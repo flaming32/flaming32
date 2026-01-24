@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "@/App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
@@ -12,10 +12,27 @@ function App() {
   const [scrapedPrices, setScrapedPrices] = useState(null);
   const [estimate, setEstimate] = useState(null);
   const [accessCode, setAccessCode] = useState("");
+  
+  // Theme state with localStorage persistence
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('stashorra_theme');
+    return saved || 'dark';
+  });
+
+  // Apply theme to document
+  useEffect(() => {
+    document.documentElement.classList.remove('light', 'dark');
+    document.documentElement.classList.add(theme);
+    localStorage.setItem('stashorra_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  };
 
   return (
-    <div className="app-container">
-      <div className="noise-texture" />
+    <div className={`app-container ${theme}`}>
+      {theme === 'dark' && <div className="noise-texture" />}
       
       <BrowserRouter>
         <Routes>
@@ -27,6 +44,8 @@ function App() {
                 setScrapedPrices={setScrapedPrices}
                 accessCode={accessCode}
                 setAccessCode={setAccessCode}
+                theme={theme}
+                toggleTheme={toggleTheme}
               />
             } 
           />
@@ -38,6 +57,8 @@ function App() {
                 scrapedPrices={scrapedPrices}
                 setEstimate={setEstimate}
                 accessCode={accessCode}
+                theme={theme}
+                toggleTheme={toggleTheme}
               />
             } 
           />
@@ -48,16 +69,18 @@ function App() {
                 phoneData={phoneData}
                 scrapedPrices={scrapedPrices}
                 estimate={estimate}
+                theme={theme}
+                toggleTheme={toggleTheme}
               />
             } 
           />
           <Route 
             path="/admin" 
-            element={<AdminPage />} 
+            element={<AdminPage theme={theme} toggleTheme={toggleTheme} />} 
           />
         </Routes>
       </BrowserRouter>
-      <Toaster position="bottom-right" />
+      <Toaster position="bottom-right" theme={theme} />
     </div>
   );
 }

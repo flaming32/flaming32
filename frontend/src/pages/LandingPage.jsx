@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo, createContext, useContext } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Search, Smartphone, Database, Cpu, Loader2, X, Key, CreditCard, Moon, Sun, Shield } from "lucide-react";
+import { Search, Smartphone, Database, Cpu, Loader2, X, Key, CreditCard, Moon, Sun, Shield, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -26,11 +26,17 @@ export default function LandingPage({ setPhoneData, setScrapedPrices, accessCode
   
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showAccessCodeModal, setShowAccessCodeModal] = useState(false);
+  const [showCheckUsesModal, setShowCheckUsesModal] = useState(false);
   const [paymentInfo, setPaymentInfo] = useState(null);
   const [accessCodeInput, setAccessCodeInput] = useState("");
+  const [checkCodeInput, setCheckCodeInput] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
   const [usesRemaining, setUsesRemaining] = useState(0);
+  const [checkedUses, setCheckedUses] = useState(null);
   const [selectedPackage, setSelectedPackage] = useState("basic");
+
+  const isDark = theme === 'dark';
 
   useEffect(() => {
     fetchPopularPhones();
@@ -80,6 +86,24 @@ export default function LandingPage({ setPhoneData, setScrapedPrices, accessCode
       return false;
     } finally {
       setIsVerifying(false);
+    }
+  };
+
+  const checkUsesBalance = async () => {
+    if (!checkCodeInput.trim()) return;
+    setIsChecking(true);
+    setCheckedUses(null);
+    try {
+      const response = await axios.post(`${API}/verify-code`, { code: checkCodeInput.trim() });
+      if (response.data.valid) {
+        setCheckedUses(response.data.uses_remaining);
+      } else {
+        toast.error(response.data.message);
+      }
+    } catch (error) {
+      toast.error("Failed to check code");
+    } finally {
+      setIsChecking(false);
     }
   };
 
@@ -143,20 +167,26 @@ export default function LandingPage({ setPhoneData, setScrapedPrices, accessCode
     }
   };
 
-  const isDark = theme === 'dark';
-
   return (
-    <div className={`min-h-screen flex flex-col ${isDark ? 'bg-zinc-950 text-white' : 'bg-white text-zinc-900'}`}>
+    <div className={`min-h-screen flex flex-col transition-colors duration-300 ${isDark ? 'bg-zinc-950 text-white' : 'bg-white text-zinc-900'}`}>
       {/* Header */}
       <header className={`w-full p-6 flex justify-between items-center ${isDark ? '' : 'border-b border-zinc-200'}`}>
-        <div className="font-brand font-extrabold text-2xl tracking-tighter uppercase">
-          Stashorra
-        </div>
-        <div className="flex items-center gap-4">
+        <div className="font-brand font-extrabold text-2xl tracking-tighter uppercase">Stashorra</div>
+        <div className="flex items-center gap-3">
+          {/* Check Uses Button */}
+          <button 
+            onClick={() => setShowCheckUsesModal(true)}
+            className={`p-2 border transition-colors ${isDark ? 'border-zinc-700 hover:border-white' : 'border-zinc-300 hover:border-zinc-900'}`}
+            title="Check remaining uses"
+            data-testid="check-uses-btn"
+          >
+            <Eye className="h-4 w-4" />
+          </button>
+          
           {/* Theme Toggle */}
           <button 
             onClick={toggleTheme}
-            className={`p-2 rounded-none border ${isDark ? 'border-zinc-700 hover:border-white' : 'border-zinc-300 hover:border-zinc-900'} transition-colors`}
+            className={`p-2 border transition-colors ${isDark ? 'border-zinc-700 hover:border-white' : 'border-zinc-300 hover:border-zinc-900'}`}
             data-testid="theme-toggle"
           >
             {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
@@ -165,7 +195,7 @@ export default function LandingPage({ setPhoneData, setScrapedPrices, accessCode
           {/* Admin Link */}
           <Link 
             to="/admin" 
-            className={`p-2 rounded-none border ${isDark ? 'border-zinc-700 hover:border-white' : 'border-zinc-300 hover:border-zinc-900'} transition-colors`}
+            className={`p-2 border transition-colors ${isDark ? 'border-zinc-700 hover:border-white' : 'border-zinc-300 hover:border-zinc-900'}`}
             data-testid="admin-link"
           >
             <Shield className="h-4 w-4" />
@@ -174,13 +204,13 @@ export default function LandingPage({ setPhoneData, setScrapedPrices, accessCode
           {accessCode ? (
             <div className="flex items-center gap-2 text-sm">
               <Key className="h-4 w-4 text-green-500" />
-              <span className={`font-mono ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>{usesRemaining} uses left</span>
+              <span className={`font-mono ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>{usesRemaining} left</span>
             </div>
           ) : (
             <Button
               variant="outline"
               onClick={() => setShowAccessCodeModal(true)}
-              className={`rounded-none h-10 px-4 font-mono text-xs uppercase ${isDark ? 'bg-transparent border-zinc-700 hover:border-white' : 'bg-transparent border-zinc-300 hover:border-zinc-900'}`}
+              className={`h-10 px-4 font-mono text-xs uppercase ${isDark ? 'bg-transparent border-zinc-700 hover:border-white' : 'bg-transparent border-zinc-300 hover:border-zinc-900'}`}
             >
               <Key className="mr-2 h-4 w-4" />
               Enter Code
@@ -201,7 +231,7 @@ export default function LandingPage({ setPhoneData, setScrapedPrices, accessCode
           </p>
 
           {/* Search Form */}
-          <div className={`w-full max-w-2xl mx-auto ${isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-zinc-50 border-zinc-200'} border p-6 md:p-8`}>
+          <div className={`w-full max-w-2xl mx-auto border p-6 md:p-8 ${isDark ? 'bg-zinc-950 border-zinc-800' : 'bg-zinc-50 border-zinc-200'}`}>
             <div className={`font-mono text-xs uppercase tracking-widest mb-6 ${isDark ? 'text-zinc-500' : 'text-zinc-500'}`}>
               Select Your Phone
             </div>
@@ -211,14 +241,14 @@ export default function LandingPage({ setPhoneData, setScrapedPrices, accessCode
               <div>
                 <label className={`font-mono text-xs uppercase tracking-widest block mb-2 ${isDark ? 'text-zinc-500' : 'text-zinc-500'}`}>Brand</label>
                 <Select value={selectedBrand} onValueChange={handleBrandChange}>
-                  <SelectTrigger data-testid="brand-select" className={`w-full rounded-none h-12 font-headings ${isDark ? 'bg-transparent border-zinc-700' : 'bg-white border-zinc-300'}`}>
+                  <SelectTrigger data-testid="brand-select" className={`w-full h-12 font-headings ${isDark ? 'bg-transparent border-zinc-700' : 'bg-white border-zinc-300'}`}>
                     <SelectValue placeholder="Select brand" />
                   </SelectTrigger>
-                  <SelectContent className={`rounded-none max-h-[400px] ${isDark ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-zinc-200'}`}>
+                  <SelectContent className={`max-h-[400px] ${isDark ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-zinc-200'}`}>
                     <div className={`p-2 border-b sticky top-0 z-10 ${isDark ? 'border-zinc-800 bg-zinc-900' : 'border-zinc-200 bg-white'}`}>
                       <div className="relative">
                         <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
-                        <Input placeholder="Search brands..." value={brandSearch} onChange={(e) => setBrandSearch(e.target.value)} className={`pl-8 rounded-none h-9 text-sm ${isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-100 border-zinc-200'}`} onClick={(e) => e.stopPropagation()} />
+                        <Input placeholder="Search brands..." value={brandSearch} onChange={(e) => setBrandSearch(e.target.value)} className={`pl-8 h-9 text-sm ${isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-100 border-zinc-200'}`} onClick={(e) => e.stopPropagation()} />
                       </div>
                     </div>
                     {filteredBrands.map((brand) => (
@@ -232,14 +262,14 @@ export default function LandingPage({ setPhoneData, setScrapedPrices, accessCode
               <div>
                 <label className={`font-mono text-xs uppercase tracking-widest block mb-2 ${isDark ? 'text-zinc-500' : 'text-zinc-500'}`}>Model</label>
                 <Select value={selectedModel} onValueChange={handleModelChange} disabled={!selectedBrand}>
-                  <SelectTrigger data-testid="model-select" className={`w-full rounded-none h-12 font-headings disabled:opacity-50 ${isDark ? 'bg-transparent border-zinc-700' : 'bg-white border-zinc-300'}`}>
+                  <SelectTrigger data-testid="model-select" className={`w-full h-12 font-headings disabled:opacity-50 ${isDark ? 'bg-transparent border-zinc-700' : 'bg-white border-zinc-300'}`}>
                     <SelectValue placeholder={customModel || "Select model"} />
                   </SelectTrigger>
-                  <SelectContent className={`rounded-none max-h-[400px] ${isDark ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-zinc-200'}`}>
+                  <SelectContent className={`max-h-[400px] ${isDark ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-zinc-200'}`}>
                     <div className={`p-2 border-b sticky top-0 z-10 ${isDark ? 'border-zinc-800 bg-zinc-900' : 'border-zinc-200 bg-white'}`}>
                       <div className="relative">
                         <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
-                        <Input placeholder="Search models..." value={modelSearch} onChange={(e) => setModelSearch(e.target.value)} className={`pl-8 rounded-none h-9 text-sm ${isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-100 border-zinc-200'}`} onClick={(e) => e.stopPropagation()} />
+                        <Input placeholder="Search models..." value={modelSearch} onChange={(e) => setModelSearch(e.target.value)} className={`pl-8 h-9 text-sm ${isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-100 border-zinc-200'}`} onClick={(e) => e.stopPropagation()} />
                       </div>
                     </div>
                     {filteredModels.map((model) => (
@@ -249,7 +279,7 @@ export default function LandingPage({ setPhoneData, setScrapedPrices, accessCode
                       <div className={`text-xs mb-2 font-mono ${isDark ? 'text-zinc-500' : 'text-zinc-500'}`}>
                         {filteredModels.length === 0 ? "Model not found?" : "Can't find your model?"}
                       </div>
-                      <Input placeholder="Type model name..." value={customModel} onChange={(e) => { setCustomModel(e.target.value); setSelectedModel(""); }} className={`rounded-none h-10 text-sm mb-2 ${isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-100 border-zinc-200'}`} onClick={(e) => e.stopPropagation()} data-testid="custom-model-input" />
+                      <Input placeholder="Type model name..." value={customModel} onChange={(e) => { setCustomModel(e.target.value); setSelectedModel(""); }} className={`h-10 text-sm mb-2 ${isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-100 border-zinc-200'}`} onClick={(e) => e.stopPropagation()} data-testid="custom-model-input" />
                       {customModel && <div className="text-xs text-green-500 font-mono">Using: {customModel}</div>}
                     </div>
                   </SelectContent>
@@ -263,7 +293,7 @@ export default function LandingPage({ setPhoneData, setScrapedPrices, accessCode
               </div>
             </div>
 
-            <Button data-testid="search-btn" onClick={handleSearch} disabled={isSearching || !selectedBrand || (!selectedModel && !customModel)} className={`w-full rounded-none h-12 font-mono uppercase tracking-wider text-sm transition-all active:scale-[0.98] disabled:opacity-50 ${isDark ? 'bg-white text-black hover:bg-zinc-200' : 'bg-zinc-900 text-white hover:bg-zinc-800'}`}>
+            <Button data-testid="search-btn" onClick={handleSearch} disabled={isSearching || !selectedBrand || (!selectedModel && !customModel)} className={`w-full h-12 font-mono uppercase tracking-wider text-sm transition-all active:scale-[0.98] disabled:opacity-50 ${isDark ? 'bg-white text-black hover:bg-zinc-200' : 'bg-zinc-900 text-white hover:bg-zinc-800'}`}>
               {isSearching ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Fetching...</> : <><Search className="mr-2 h-4 w-4" />Get Estimate</>}
             </Button>
           </div>
@@ -273,21 +303,17 @@ export default function LandingPage({ setPhoneData, setScrapedPrices, accessCode
       {/* Features */}
       <section className="py-24 px-4">
         <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className={`p-8 ${isDark ? 'bg-zinc-900/50 border border-zinc-800' : 'bg-zinc-50 border border-zinc-200'}`}>
-            <Database className={`h-8 w-8 mb-4 ${isDark ? 'text-white' : 'text-zinc-900'}`} strokeWidth={1.5} />
-            <h3 className="font-headings font-bold text-xl mb-2">Market Data</h3>
-            <p className={isDark ? 'text-zinc-400 text-sm' : 'text-zinc-600 text-sm'}>Real market prices for accurate valuations</p>
-          </div>
-          <div className={`p-8 ${isDark ? 'bg-zinc-900/50 border border-zinc-800' : 'bg-zinc-50 border border-zinc-200'}`}>
-            <Smartphone className={`h-8 w-8 mb-4 ${isDark ? 'text-white' : 'text-zinc-900'}`} strokeWidth={1.5} />
-            <h3 className="font-headings font-bold text-xl mb-2">Detailed Assessment</h3>
-            <p className={isDark ? 'text-zinc-400 text-sm' : 'text-zinc-600 text-sm'}>Comprehensive condition questions</p>
-          </div>
-          <div className={`p-8 ${isDark ? 'bg-zinc-900/50 border border-zinc-800' : 'bg-zinc-50 border border-zinc-200'}`}>
-            <Cpu className={`h-8 w-8 mb-4 ${isDark ? 'text-white' : 'text-zinc-900'}`} strokeWidth={1.5} />
-            <h3 className="font-headings font-bold text-xl mb-2">AI Estimation</h3>
-            <p className={isDark ? 'text-zinc-400 text-sm' : 'text-zinc-600 text-sm'}>AI-powered fair reseller pricing</p>
-          </div>
+          {[
+            { icon: Database, title: "Market Data", desc: "Real market prices for accurate valuations" },
+            { icon: Smartphone, title: "Detailed Assessment", desc: "Comprehensive condition questions" },
+            { icon: Cpu, title: "AI Estimation", desc: "AI-powered fair reseller pricing" }
+          ].map((item, i) => (
+            <div key={i} className={`p-8 border transition-colors ${isDark ? 'bg-zinc-900/50 border-zinc-800 hover:border-zinc-700' : 'bg-zinc-50 border-zinc-200 hover:border-zinc-300'}`}>
+              <item.icon className={`h-8 w-8 mb-4 ${isDark ? 'text-white' : 'text-zinc-900'}`} strokeWidth={1.5} />
+              <h3 className="font-headings font-bold text-xl mb-2">{item.title}</h3>
+              <p className={`text-sm ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>{item.desc}</p>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -302,9 +328,59 @@ export default function LandingPage({ setPhoneData, setScrapedPrices, accessCode
         </div>
       </footer>
 
+      {/* Check Uses Modal */}
+      <Dialog open={showCheckUsesModal} onOpenChange={setShowCheckUsesModal}>
+        <DialogContent className={`max-w-md ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'}`}>
+          <DialogHeader>
+            <DialogTitle className="font-headings text-xl flex items-center gap-2">
+              <Eye className="h-5 w-5" /> Check Remaining Uses
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <p className={`text-sm ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
+              Enter your access code to check how many uses you have remaining.
+            </p>
+            <div className="flex gap-2">
+              <Input 
+                placeholder="Enter access code" 
+                value={checkCodeInput} 
+                onChange={(e) => setCheckCodeInput(e.target.value.toUpperCase())} 
+                className={`h-12 font-mono uppercase ${isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-white border-zinc-300'}`}
+                data-testid="check-code-input"
+              />
+              <Button 
+                onClick={checkUsesBalance} 
+                disabled={isChecking || !checkCodeInput.trim()} 
+                className={`h-12 px-6 ${isDark ? 'bg-white text-black' : 'bg-zinc-900 text-white'}`}
+              >
+                {isChecking ? <Loader2 className="h-4 w-4 animate-spin" /> : "Check"}
+              </Button>
+            </div>
+            
+            {checkedUses !== null && (
+              <div className={`p-6 text-center border ${isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-100 border-zinc-200'}`}>
+                <div className="font-mono text-5xl font-bold text-green-500">{checkedUses}</div>
+                <div className={`text-sm mt-2 ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>uses remaining</div>
+                {checkedUses > 0 && (
+                  <Button 
+                    onClick={() => {
+                      verifyAccessCode(checkCodeInput);
+                      setShowCheckUsesModal(false);
+                    }}
+                    className={`mt-4 h-10 px-4 font-mono text-xs uppercase ${isDark ? 'bg-white text-black' : 'bg-zinc-900 text-white'}`}
+                  >
+                    Use This Code
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Payment Modal */}
       <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
-        <DialogContent className={`rounded-none max-w-md ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'}`}>
+        <DialogContent className={`max-w-md ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'}`}>
           <DialogHeader>
             <DialogTitle className="font-headings text-xl flex items-center gap-2">
               <CreditCard className="h-5 w-5" /> Payment Required
@@ -344,8 +420,8 @@ export default function LandingPage({ setPhoneData, setScrapedPrices, accessCode
               <div className={`border-t pt-4 ${isDark ? 'border-zinc-800' : 'border-zinc-200'}`}>
                 <div className={`font-mono text-xs uppercase tracking-widest mb-3 ${isDark ? 'text-zinc-500' : 'text-zinc-500'}`}>Already have a code?</div>
                 <div className="flex gap-2">
-                  <Input placeholder="Enter access code" value={accessCodeInput} onChange={(e) => setAccessCodeInput(e.target.value.toUpperCase())} className={`rounded-none h-12 font-mono uppercase ${isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-white border-zinc-300'}`} />
-                  <Button onClick={handleAccessCodeSubmit} disabled={isVerifying || !accessCodeInput.trim()} className={`rounded-none h-12 px-6 ${isDark ? 'bg-white text-black hover:bg-zinc-200' : 'bg-zinc-900 text-white hover:bg-zinc-800'}`}>
+                  <Input placeholder="Enter access code" value={accessCodeInput} onChange={(e) => setAccessCodeInput(e.target.value.toUpperCase())} className={`h-12 font-mono uppercase ${isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-white border-zinc-300'}`} />
+                  <Button onClick={handleAccessCodeSubmit} disabled={isVerifying || !accessCodeInput.trim()} className={`h-12 px-6 ${isDark ? 'bg-white text-black hover:bg-zinc-200' : 'bg-zinc-900 text-white hover:bg-zinc-800'}`}>
                     {isVerifying ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify"}
                   </Button>
                 </div>
@@ -357,20 +433,20 @@ export default function LandingPage({ setPhoneData, setScrapedPrices, accessCode
 
       {/* Access Code Modal */}
       <Dialog open={showAccessCodeModal} onOpenChange={setShowAccessCodeModal}>
-        <DialogContent className={`rounded-none max-w-md ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'}`}>
+        <DialogContent className={`max-w-md ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'}`}>
           <DialogHeader>
             <DialogTitle className="font-headings text-xl flex items-center gap-2"><Key className="h-5 w-5" /> Enter Access Code</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-4">
-            <p className={isDark ? 'text-zinc-400 text-sm' : 'text-zinc-600 text-sm'}>Enter your access code to unlock price estimates.</p>
+            <p className={`text-sm ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>Enter your access code to unlock price estimates.</p>
             <div className="flex gap-2">
-              <Input placeholder="Enter access code" value={accessCodeInput} onChange={(e) => setAccessCodeInput(e.target.value.toUpperCase())} className={`rounded-none h-12 font-mono uppercase ${isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-white border-zinc-300'}`} />
-              <Button onClick={handleAccessCodeSubmit} disabled={isVerifying || !accessCodeInput.trim()} className={`rounded-none h-12 px-6 ${isDark ? 'bg-white text-black' : 'bg-zinc-900 text-white'}`}>
+              <Input placeholder="Enter access code" value={accessCodeInput} onChange={(e) => setAccessCodeInput(e.target.value.toUpperCase())} className={`h-12 font-mono uppercase ${isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-white border-zinc-300'}`} />
+              <Button onClick={handleAccessCodeSubmit} disabled={isVerifying || !accessCodeInput.trim()} className={`h-12 px-6 ${isDark ? 'bg-white text-black' : 'bg-zinc-900 text-white'}`}>
                 {isVerifying ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify"}
               </Button>
             </div>
             <div className={`border-t pt-4 ${isDark ? 'border-zinc-800' : 'border-zinc-200'}`}>
-              <Button variant="outline" onClick={() => { setShowAccessCodeModal(false); setShowPaymentModal(true); }} className={`w-full rounded-none h-12 font-mono text-sm ${isDark ? 'bg-transparent border-zinc-700 hover:border-white' : 'bg-transparent border-zinc-300 hover:border-zinc-900'}`}>
+              <Button variant="outline" onClick={() => { setShowAccessCodeModal(false); setShowPaymentModal(true); }} className={`w-full h-12 font-mono text-sm ${isDark ? 'bg-transparent border-zinc-700 hover:border-white' : 'bg-transparent border-zinc-300 hover:border-zinc-900'}`}>
                 Don't have a code? Purchase access
               </Button>
             </div>

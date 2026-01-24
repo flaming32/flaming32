@@ -207,6 +207,16 @@ export default function LandingPage({ setPhoneData, setScrapedPrices, accessCode
       <header className={`w-full p-6 flex justify-between items-center ${isDark ? '' : 'border-b border-zinc-200'}`}>
         <div className="font-brand font-extrabold text-2xl tracking-tighter uppercase">Stashorra</div>
         <div className="flex items-center gap-3">
+          {/* Reseller Dashboard Button */}
+          <button 
+            onClick={() => setShowResellerModal(true)}
+            className={`p-2 border transition-colors ${isDark ? 'border-green-500/50 hover:border-green-500 text-green-500' : 'border-green-600/50 hover:border-green-600 text-green-600'}`}
+            title="Reseller Dashboard"
+            data-testid="reseller-dashboard-btn"
+          >
+            <Package className="h-4 w-4" />
+          </button>
+          
           {/* Check Uses Button */}
           <button 
             onClick={() => setShowCheckUsesModal(true)}

@@ -326,9 +326,10 @@ class StashorraAPITester:
         # Test core endpoints
         popular_success, popular_data = self.test_popular_phones()
         
-        # Test condition questions for both iPhone and Android
-        self.test_condition_questions("Apple")
-        self.test_condition_questions("Tecno")
+        # Test condition questions for both iPhone and Android with specific models
+        self.test_condition_questions("Apple", "iPhone 14 Pro")  # Should get Face ID
+        self.test_condition_questions("Apple", "iPhone 8")       # Should get Touch ID
+        self.test_condition_questions("Tecno", "Camon 20")       # Should get Android questions
         
         # Test search with real data
         search_success, search_data = self.test_search_phone("Apple", "iPhone 15")

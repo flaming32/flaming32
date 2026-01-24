@@ -84,10 +84,10 @@ class StashorraAPITester:
             
             if success:
                 data = response.json()
-                slot_prices = data.get('slot_prices', [])
-                jiji_prices = data.get('jiji_prices', [])
+                new_prices = data.get('new_prices', [])
+                used_prices = data.get('used_prices', [])
                 
-                details = f"Status: {response.status_code}, Slot: {len(slot_prices)} prices, Jiji: {len(jiji_prices)} prices"
+                details = f"Status: {response.status_code}, New: {len(new_prices)} prices, Used: {len(used_prices)} prices"
             else:
                 details = f"Status: {response.status_code}, Response: {response.text[:100]}"
                 

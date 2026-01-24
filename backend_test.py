@@ -513,7 +513,7 @@ class StashorraAPITester:
 
     def run_all_tests(self):
         """Run all backend tests"""
-        print("🚀 Starting Stashorra Backend API Tests")
+        print("🚀 Starting Stashorra Backend API Tests (Payment System)")
         print(f"📍 Testing: {self.base_url}")
         print("=" * 60)
         
@@ -522,7 +522,18 @@ class StashorraAPITester:
             print("❌ API is not accessible. Stopping tests.")
             return False
             
+        # Test payment system endpoints
+        print("\n🏦 Testing Payment System...")
+        self.test_payment_info()
+        self.test_admin_login()
+        
+        # Generate access code for testing
+        generate_success, generate_data = self.test_admin_generate_code()
+        if generate_success:
+            self.test_verify_access_code()
+            
         # Test core endpoints
+        print("\n📱 Testing Phone Data Endpoints...")
         popular_success, popular_data = self.test_popular_phones()
         
         # Test condition questions for both iPhone and Android with specific models
@@ -536,9 +547,16 @@ class StashorraAPITester:
         # Test Android search
         self.test_search_phone("Tecno", "Camon 20")
         
-        # Test estimation
-        self.test_estimate_price()
-        self.test_estimate_price("Tecno", "Camon 20", 180000, 110000)
+        # Test estimation with access code requirement
+        print("\n💰 Testing Price Estimation with Access Code...")
+        if hasattr(self, 'test_access_code'):
+            self.test_estimate_price_with_access_code()
+            self.test_access_code_usage_decrement()
+        
+        # Test estimation without access code (should fail)
+        self.test_estimate_price_without_access_code()
+        
+        # Test edge cases
         self.test_estimate_price_edge_cases()
         
         # Test history

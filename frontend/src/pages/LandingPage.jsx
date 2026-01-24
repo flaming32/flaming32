@@ -497,6 +497,152 @@ export default function LandingPage({ setPhoneData, setScrapedPrices, accessCode
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Reseller Dashboard Modal */}
+      <Dialog open={showResellerModal} onOpenChange={(open) => {
+        setShowResellerModal(open);
+        if (!open) {
+          setResellerDashboard(null);
+          setResellerCodeInput("");
+        }
+      }}>
+        <DialogContent className={`max-w-2xl max-h-[90vh] overflow-hidden flex flex-col ${isDark ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'}`}>
+          <DialogHeader>
+            <DialogTitle className="font-headings text-xl flex items-center gap-2 text-green-500">
+              <Package className="h-5 w-5" /> Reseller Dashboard
+            </DialogTitle>
+          </DialogHeader>
+          
+          {!resellerDashboard ? (
+            <div className="space-y-4 mt-4">
+              <p className={`text-sm ${isDark ? 'text-zinc-400' : 'text-zinc-600'}`}>
+                Enter your reseller master code (starts with <span className="font-mono font-bold">R-</span>) to view your 20 individual codes.
+              </p>
+              <div className="flex gap-2">
+                <Input 
+                  placeholder="R-XXXXXXXX" 
+                  value={resellerCodeInput} 
+                  onChange={(e) => setResellerCodeInput(e.target.value.toUpperCase())} 
+                  className={`h-12 font-mono uppercase ${isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-white border-zinc-300'}`}
+                  data-testid="reseller-code-input"
+                />
+                <Button 
+                  onClick={fetchResellerDashboard} 
+                  disabled={isLoadingReseller || !resellerCodeInput.trim()} 
+                  className="h-12 px-6 bg-green-600 text-white hover:bg-green-700"
+                  data-testid="reseller-submit-btn"
+                >
+                  {isLoadingReseller ? <Loader2 className="h-4 w-4 animate-spin" /> : "View Codes"}
+                </Button>
+              </div>
+              <div className={`p-4 border border-dashed ${isDark ? 'border-zinc-700 bg-zinc-800/50' : 'border-zinc-300 bg-zinc-50'}`}>
+                <p className={`text-xs ${isDark ? 'text-zinc-500' : 'text-zinc-500'}`}>
+                  <strong>Don't have a reseller code?</strong> Purchase a reseller package (₦3,000) to get a master code with 20 individual codes to distribute.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex-1 overflow-hidden flex flex-col mt-4">
+              {/* Dashboard Header */}
+              <div className={`p-4 border mb-4 ${isDark ? 'bg-green-500/10 border-green-500/30' : 'bg-green-50 border-green-200'}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="font-mono text-lg text-green-500 font-bold">{resellerDashboard.master_code}</div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      setResellerDashboard(null);
+                      setResellerCodeInput("");
+                    }}
+                    className={`text-xs ${isDark ? 'border-zinc-700' : 'border-zinc-300'}`}
+                  >
+                    Change Code
+                  </Button>
+                </div>
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <div className="font-headings text-2xl font-bold">{resellerDashboard.total_codes}</div>
+                    <div className={`text-xs font-mono ${isDark ? 'text-zinc-500' : 'text-zinc-500'}`}>Total</div>
+                  </div>
+                  <div>
+                    <div className="font-headings text-2xl font-bold text-green-500">{resellerDashboard.available_codes}</div>
+                    <div className={`text-xs font-mono ${isDark ? 'text-zinc-500' : 'text-zinc-500'}`}>Available</div>
+                  </div>
+                  <div>
+                    <div className="font-headings text-2xl font-bold text-red-500">{resellerDashboard.used_codes}</div>
+                    <div className={`text-xs font-mono ${isDark ? 'text-zinc-500' : 'text-zinc-500'}`}>Used</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Codes List */}
+              <div className={`text-xs font-mono uppercase tracking-widest mb-2 ${isDark ? 'text-zinc-500' : 'text-zinc-500'}`}>
+                Your Codes to Distribute
+              </div>
+              <div className={`flex-1 overflow-y-auto border ${isDark ? 'border-zinc-800' : 'border-zinc-200'}`}>
+                {resellerDashboard.codes && resellerDashboard.codes.length > 0 ? (
+                  <div className={`divide-y ${isDark ? 'divide-zinc-800' : 'divide-zinc-200'}`}>
+                    {resellerDashboard.codes.map((code, idx) => (
+                      <div 
+                        key={code.code} 
+                        className={`p-3 flex items-center justify-between ${
+                          code.uses_remaining === 0 
+                            ? 'opacity-50' 
+                            : isDark ? 'hover:bg-zinc-800/50' : 'hover:bg-zinc-50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className={`w-6 text-center font-mono text-xs ${isDark ? 'text-zinc-600' : 'text-zinc-400'}`}>
+                            {idx + 1}
+                          </span>
+                          <span className={`font-mono font-bold ${
+                            code.uses_remaining > 0 ? 'text-green-500' : isDark ? 'text-zinc-500' : 'text-zinc-400'
+                          }`}>
+                            {code.code}
+                          </span>
+                          <span className={`text-xs px-2 py-0.5 ${
+                            code.uses_remaining > 0 
+                              ? 'bg-green-500/20 text-green-500' 
+                              : isDark ? 'bg-zinc-800 text-zinc-500' : 'bg-zinc-200 text-zinc-500'
+                          }`}>
+                            {code.uses_remaining > 0 ? 'Available' : 'Used'}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => copyCode(code.code)}
+                          className={`p-2 transition-colors ${
+                            copiedCode === code.code 
+                              ? 'text-green-500' 
+                              : isDark ? 'text-zinc-500 hover:text-white' : 'text-zinc-400 hover:text-zinc-900'
+                          }`}
+                          title="Copy code"
+                        >
+                          {copiedCode === code.code ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className={`p-8 text-center ${isDark ? 'text-zinc-500' : 'text-zinc-400'}`}>
+                    No codes found
+                  </div>
+                )}
+              </div>
+
+              {/* Refresh Button */}
+              <Button 
+                variant="outline" 
+                onClick={fetchResellerDashboard}
+                disabled={isLoadingReseller}
+                className={`mt-4 w-full h-10 ${isDark ? 'border-zinc-700 hover:border-white' : 'border-zinc-300 hover:border-zinc-900'}`}
+              >
+                {isLoadingReseller ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Refresh
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

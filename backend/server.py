@@ -755,6 +755,11 @@ async def get_estimates(limit: int = 10):
     return estimates
 
 # Admin Routes
+class AdminGenerateCode(BaseModel):
+    username: str
+    password: str
+    note: Optional[str] = None
+
 @api_router.post("/admin/login")
 async def admin_login(request: AdminLogin):
     if request.username == ADMIN_USERNAME and request.password == ADMIN_PASSWORD:
@@ -762,9 +767,9 @@ async def admin_login(request: AdminLogin):
     raise HTTPException(status_code=401, detail="Invalid credentials")
 
 @api_router.post("/admin/generate-code")
-async def generate_code(request: AccessCodeCreate, credentials: AdminLogin):
+async def generate_code(request: AdminGenerateCode):
     # Verify admin
-    if credentials.username != ADMIN_USERNAME or credentials.password != ADMIN_PASSWORD:
+    if request.username != ADMIN_USERNAME or request.password != ADMIN_PASSWORD:
         raise HTTPException(status_code=401, detail="Invalid admin credentials")
     
     code = generate_access_code()

@@ -12,7 +12,7 @@ import axios from "axios";
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-export default function EstimatePage({ phoneData, scrapedPrices, setEstimate }) {
+export default function EstimatePage({ phoneData, scrapedPrices, setEstimate, accessCode }) {
   const navigate = useNavigate();
   const [questions, setQuestions] = useState([]);
   const [biometricType, setBiometricType] = useState("fingerprint");
@@ -26,12 +26,16 @@ export default function EstimatePage({ phoneData, scrapedPrices, setEstimate }) 
       navigate("/");
       return;
     }
+    if (!accessCode) {
+      toast.error("Access code required");
+      navigate("/");
+      return;
+    }
     fetchQuestions();
-  }, [phoneData, navigate]);
+  }, [phoneData, navigate, accessCode]);
 
   const fetchQuestions = async () => {
     try {
-      // Use the new endpoint that takes both brand and model
       const response = await axios.get(`${API}/condition-questions/${phoneData.brand}/${encodeURIComponent(phoneData.model)}`);
       setQuestions(response.data.questions);
       setBiometricType(response.data.biometric_type || "fingerprint");
@@ -110,6 +114,7 @@ export default function EstimatePage({ phoneData, scrapedPrices, setEstimate }) 
         condition: answers,
         new_price: newAvg,
         used_price: usedAvg,
+        access_code: accessCode
       });
 
       setEstimate(response.data);
@@ -117,7 +122,12 @@ export default function EstimatePage({ phoneData, scrapedPrices, setEstimate }) 
       navigate("/results");
     } catch (error) {
       console.error("Estimate error:", error);
-      toast.error("Failed to calculate estimate");
+      if (error.response?.status === 403) {
+        toast.error(error.response.data.detail || "Access code invalid or exhausted");
+        navigate("/");
+      } else {
+        toast.error("Failed to calculate estimate");
+      }
     } finally {
       setIsSubmitting(false);
     }

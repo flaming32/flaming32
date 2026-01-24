@@ -35,6 +35,13 @@ export default function LandingPage({ setPhoneData, setScrapedPrices, accessCode
   const [usesRemaining, setUsesRemaining] = useState(0);
   const [checkedUses, setCheckedUses] = useState(null);
   const [selectedPackage, setSelectedPackage] = useState("basic");
+  
+  // Reseller dashboard state
+  const [showResellerModal, setShowResellerModal] = useState(false);
+  const [resellerCodeInput, setResellerCodeInput] = useState("");
+  const [resellerDashboard, setResellerDashboard] = useState(null);
+  const [isLoadingReseller, setIsLoadingReseller] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(null);
 
   const isDark = theme === 'dark';
 

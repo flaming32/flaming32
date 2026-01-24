@@ -133,8 +133,130 @@ class StashorraAPITester:
             self.log_test("Search Phone", False, f"Error: {str(e)}")
             return False, {}
 
-    def test_estimate_price(self, brand="Apple", model="iPhone 15", new_price=1400000, used_price=900000):
-        """Test /api/estimate-price endpoint"""
+    def test_payment_info(self):
+        """Test /api/payment-info endpoint"""
+        try:
+            response = requests.get(f"{self.api_url}/payment-info", timeout=10)
+            success = response.status_code == 200
+            
+            if success:
+                data = response.json()
+                account_number = data.get('account_number', '')
+                bank_name = data.get('bank_name', '')
+                account_name = data.get('account_name', '')
+                amount = data.get('amount', 0)
+                uses_per_payment = data.get('uses_per_payment', 0)
+                
+                # Verify correct payment details
+                correct_details = (
+                    account_number == "3002978669" and
+                    bank_name == "KUDA MFB" and
+                    account_name == "STASHORRA STORE" and
+                    amount == 400 and
+                    uses_per_payment == 2
+                )
+                
+                details = f"Status: {response.status_code}, Bank: {bank_name}, Account: {account_number}, Name: {account_name}, Amount: ₦{amount}, Uses: {uses_per_payment}, Correct: {correct_details}"
+            else:
+                details = f"Status: {response.status_code}"
+                
+            self.log_test("Payment Info", success and correct_details, details)
+            return success and correct_details
+        except Exception as e:
+            self.log_test("Payment Info", False, f"Error: {str(e)}")
+            return False
+
+    def test_admin_login(self):
+        """Test /api/admin/login endpoint"""
+        try:
+            # Test with correct credentials
+            payload = {"username": "admin", "password": "Olaoluwa32$"}
+            response = requests.post(f"{self.api_url}/admin/login", json=payload, timeout=10)
+            success = response.status_code == 200
+            
+            if success:
+                data = response.json()
+                login_success = data.get('success', False)
+                details = f"Status: {response.status_code}, Login Success: {login_success}"
+            else:
+                details = f"Status: {response.status_code}, Response: {response.text[:100]}"
+                
+            self.log_test("Admin Login (Valid)", success and login_success, details)
+            
+            # Test with invalid credentials
+            payload = {"username": "admin", "password": "wrongpassword"}
+            response = requests.post(f"{self.api_url}/admin/login", json=payload, timeout=10)
+            invalid_success = response.status_code == 401
+            
+            self.log_test("Admin Login (Invalid)", invalid_success, f"Status: {response.status_code} (should be 401)")
+            
+            return success and login_success
+        except Exception as e:
+            self.log_test("Admin Login", False, f"Error: {str(e)}")
+            return False
+
+    def test_admin_generate_code(self):
+        """Test /api/admin/generate-code endpoint"""
+        try:
+            payload = {
+                "username": "admin", 
+                "password": "Olaoluwa32$",
+                "note": "Test code for API testing"
+            }
+            response = requests.post(f"{self.api_url}/admin/generate-code", json=payload, timeout=10)
+            success = response.status_code == 200
+            
+            if success:
+                data = response.json()
+                code = data.get('code', '')
+                uses = data.get('uses', 0)
+                details = f"Status: {response.status_code}, Code: {code}, Uses: {uses}"
+                
+                # Store the generated code for later tests
+                self.test_access_code = code
+            else:
+                details = f"Status: {response.status_code}, Response: {response.text[:100]}"
+                
+            self.log_test("Admin Generate Code", success, details)
+            return success, data if success else {}
+        except Exception as e:
+            self.log_test("Admin Generate Code", False, f"Error: {str(e)}")
+            return False, {}
+
+    def test_verify_access_code(self, code=None):
+        """Test /api/verify-code endpoint"""
+        if not code and hasattr(self, 'test_access_code'):
+            code = self.test_access_code
+        elif not code:
+            self.log_test("Verify Access Code", False, "No access code available for testing")
+            return False
+            
+        try:
+            payload = {"code": code}
+            response = requests.post(f"{self.api_url}/verify-code", json=payload, timeout=10)
+            success = response.status_code == 200
+            
+            if success:
+                data = response.json()
+                valid = data.get('valid', False)
+                uses_remaining = data.get('uses_remaining', 0)
+                message = data.get('message', '')
+                details = f"Status: {response.status_code}, Valid: {valid}, Uses: {uses_remaining}, Message: {message}"
+            else:
+                details = f"Status: {response.status_code}, Response: {response.text[:100]}"
+                
+            self.log_test("Verify Access Code", success and valid, details)
+            return success and valid
+        except Exception as e:
+            self.log_test("Verify Access Code", False, f"Error: {str(e)}")
+            return False
+
+    def test_estimate_price_with_access_code(self, brand="Apple", model="iPhone 15", new_price=1400000, used_price=900000):
+        """Test /api/estimate-price endpoint with access code requirement"""
+        if not hasattr(self, 'test_access_code'):
+            self.log_test("Estimate Price with Access Code", False, "No access code available for testing")
+            return False, {}
+            
         try:
             # iPhone condition payload
             if brand == "Apple":
@@ -174,7 +296,8 @@ class StashorraAPITester:
                 "model": model,
                 "condition": condition,
                 "new_price": new_price,
-                "used_price": used_price
+                "used_price": used_price,
+                "access_code": self.test_access_code
             }
             
             response = requests.post(
@@ -194,11 +317,87 @@ class StashorraAPITester:
             else:
                 details = f"Status: {response.status_code}, Response: {response.text[:100]}"
                 
-            self.log_test("Estimate Price", success, details)
+            self.log_test("Estimate Price with Access Code", success, details)
             return success, data if success else {}
         except Exception as e:
-            self.log_test("Estimate Price", False, f"Error: {str(e)}")
+            self.log_test("Estimate Price with Access Code", False, f"Error: {str(e)}")
             return False, {}
+
+    def test_estimate_price_without_access_code(self):
+        """Test /api/estimate-price endpoint without access code (should fail)"""
+        try:
+            condition = {
+                "screen_condition": "good",
+                "body_condition": "good", 
+                "battery_health": "excellent",
+                "speakers_working": "yes",
+                "cameras_working": "all_working",
+                "buttons_working": "all_working",
+                "network_status": "unlocked",
+                "original_parts": "yes",
+                "face_id_working": "yes",
+                "icloud_status": "unlocked",
+                "back_glass_condition": "intact",
+                "true_tone_working": "yes"
+            }
+            
+            payload = {
+                "brand": "Apple",
+                "model": "iPhone 15",
+                "condition": condition,
+                "new_price": 1400000,
+                "used_price": 900000
+                # No access_code provided
+            }
+            
+            response = requests.post(
+                f"{self.api_url}/estimate-price",
+                json=payload,
+                timeout=30
+            )
+            
+            # Should fail with 422 (validation error) or 403 (forbidden)
+            success = response.status_code in [403, 422]
+            details = f"Status: {response.status_code} (should be 403 or 422)"
+                
+            self.log_test("Estimate Price without Access Code", success, details)
+            return success
+        except Exception as e:
+            self.log_test("Estimate Price without Access Code", False, f"Error: {str(e)}")
+            return False
+
+    def test_access_code_usage_decrement(self):
+        """Test that access code usage decrements after estimate"""
+        if not hasattr(self, 'test_access_code'):
+            self.log_test("Access Code Usage Decrement", False, "No access code available for testing")
+            return False
+            
+        try:
+            # First, check initial uses
+            payload = {"code": self.test_access_code}
+            response = requests.post(f"{self.api_url}/verify-code", json=payload, timeout=10)
+            
+            if response.status_code == 200:
+                initial_uses = response.json().get('uses_remaining', 0)
+                
+                # Now make an estimate to use one credit
+                self.test_estimate_price_with_access_code("Tecno", "Camon 20", 180000, 65000)
+                
+                # Check uses again
+                response = requests.post(f"{self.api_url}/verify-code", json=payload, timeout=10)
+                if response.status_code == 200:
+                    final_uses = response.json().get('uses_remaining', 0)
+                    decremented = final_uses == (initial_uses - 1)
+                    
+                    details = f"Initial: {initial_uses}, Final: {final_uses}, Decremented: {decremented}"
+                    self.log_test("Access Code Usage Decrement", decremented, details)
+                    return decremented
+                    
+            self.log_test("Access Code Usage Decrement", False, "Failed to verify usage decrement")
+            return False
+        except Exception as e:
+            self.log_test("Access Code Usage Decrement", False, f"Error: {str(e)}")
+            return False
 
     def test_estimate_price_edge_cases(self):
         """Test estimate price with edge cases"""

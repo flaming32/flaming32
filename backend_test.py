@@ -71,6 +71,38 @@ class StashorraAPITester:
             self.log_test("Popular Phones", False, f"Error: {str(e)}")
             return False, {}
 
+    def test_condition_questions(self, brand="Apple"):
+        """Test /api/condition-questions/{brand} endpoint"""
+        try:
+            response = requests.get(f"{self.api_url}/condition-questions/{brand}", timeout=10)
+            success = response.status_code == 200
+            
+            if success:
+                data = response.json()
+                questions = data.get('questions', [])
+                question_count = len(questions)
+                
+                # Check for iPhone specific questions
+                if brand == "Apple":
+                    has_face_id = any(q.get('id') == 'face_id_working' for q in questions)
+                    has_icloud = any(q.get('id') == 'icloud_status' for q in questions)
+                    has_true_tone = any(q.get('id') == 'true_tone_working' for q in questions)
+                    details = f"Status: {response.status_code}, Questions: {question_count}, Face ID: {has_face_id}, iCloud: {has_icloud}, True Tone: {has_true_tone}"
+                else:
+                    # Check for Android specific questions
+                    has_fingerprint = any(q.get('id') == 'fingerprint_working' for q in questions)
+                    has_frp = any(q.get('id') == 'frp_status' for q in questions)
+                    has_charging = any(q.get('id') == 'charging_port' for q in questions)
+                    details = f"Status: {response.status_code}, Questions: {question_count}, Fingerprint: {has_fingerprint}, FRP: {has_frp}, Charging: {has_charging}"
+            else:
+                details = f"Status: {response.status_code}"
+                
+            self.log_test(f"Condition Questions ({brand})", success, details)
+            return success, data if success else {}
+        except Exception as e:
+            self.log_test(f"Condition Questions ({brand})", False, f"Error: {str(e)}")
+            return False, {}
+
     def test_search_phone(self, brand="Apple", model="iPhone 15"):
         """Test /api/search-phone endpoint"""
         try:

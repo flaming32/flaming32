@@ -1,88 +1,130 @@
 {
   "summary": {
-    "total_tests": 13,
-    "passed_tests": 13,
-    "success_rate": 1.0,
-    "timestamp": "2026-01-24T17:09:30.103379"
+    "total_tests": 20,
+    "passed_tests": 17,
+    "success_rate": 0.85,
+    "timestamp": "2026-01-24T17:34:31.247523"
   },
   "test_results": [
     {
       "test": "API Root",
       "status": "PASS",
       "details": "Status: 200, Message: Stashorra API - Phone Price Estimator",
-      "timestamp": "2026-01-24T17:09:29.338793"
+      "timestamp": "2026-01-24T17:34:30.096685"
+    },
+    {
+      "test": "Payment Info",
+      "status": "PASS",
+      "details": "Status: 200, Bank: KUDA MFB, Account: 3002978669, Name: STASHORRA STORE, Amount: \u20a6400, Uses: 2, Correct: True",
+      "timestamp": "2026-01-24T17:34:30.175236"
+    },
+    {
+      "test": "Admin Login (Valid)",
+      "status": "PASS",
+      "details": "Status: 200, Login Success: True",
+      "timestamp": "2026-01-24T17:34:30.219549"
+    },
+    {
+      "test": "Admin Login (Invalid)",
+      "status": "PASS",
+      "details": "Status: 401 (should be 401)",
+      "timestamp": "2026-01-24T17:34:30.256649"
+    },
+    {
+      "test": "Admin Generate Code",
+      "status": "PASS",
+      "details": "Status: 200, Code: JY64LONR, Uses: 2",
+      "timestamp": "2026-01-24T17:34:30.293528"
+    },
+    {
+      "test": "Verify Access Code",
+      "status": "PASS",
+      "details": "Status: 200, Valid: True, Uses: 2, Message: Access code valid",
+      "timestamp": "2026-01-24T17:34:30.332826"
     },
     {
       "test": "Popular Phones",
       "status": "PASS",
       "details": "Status: 200, Brands: 78, Apple: True, Samsung: True",
-      "timestamp": "2026-01-24T17:09:29.380445"
+      "timestamp": "2026-01-24T17:34:30.371027"
     },
     {
       "test": "Condition Questions (Apple iPhone 14 Pro)",
       "status": "PASS",
       "details": "Status: 200, Questions: 12, Biometric: face_id, Face ID: True, Touch ID: False, iCloud: True, True Tone: True",
-      "timestamp": "2026-01-24T17:09:29.429932"
+      "timestamp": "2026-01-24T17:34:30.408389"
     },
     {
       "test": "Condition Questions (Apple iPhone 8)",
       "status": "PASS",
       "details": "Status: 200, Questions: 12, Biometric: touch_id, Face ID: False, Touch ID: True, iCloud: True, True Tone: True",
-      "timestamp": "2026-01-24T17:09:29.469789"
+      "timestamp": "2026-01-24T17:34:30.452538"
     },
     {
       "test": "Condition Questions (Tecno Camon 20)",
       "status": "PASS",
       "details": "Status: 200, Questions: 12, Biometric: fingerprint, Fingerprint: True, Face Unlock: True, FRP: True, Charging: True",
-      "timestamp": "2026-01-24T17:09:29.515284"
+      "timestamp": "2026-01-24T17:34:30.492910"
     },
     {
       "test": "Search Phone",
       "status": "PASS",
       "details": "Status: 200, New: 1 prices, Used: 1 prices",
-      "timestamp": "2026-01-24T17:09:29.674968"
+      "timestamp": "2026-01-24T17:34:30.776818"
     },
     {
       "test": "Search Phone",
       "status": "PASS",
       "details": "Status: 200, New: 1 prices, Used: 1 prices",
-      "timestamp": "2026-01-24T17:09:29.802927"
+      "timestamp": "2026-01-24T17:34:30.895290"
     },
     {
-      "test": "Estimate Price",
+      "test": "Estimate Price with Access Code",
       "status": "PASS",
-      "details": "Status: 200, Price: \u20a6885,000, Confidence: high",
-      "timestamp": "2026-01-24T17:09:29.864162"
+      "details": "Status: 200, Price: \u20a6885,000, Confidence: medium",
+      "timestamp": "2026-01-24T17:34:30.934391"
     },
     {
-      "test": "Estimate Price",
+      "test": "Estimate Price with Access Code",
       "status": "PASS",
-      "details": "Status: 200, Price: \u20a6108,000, Confidence: high",
-      "timestamp": "2026-01-24T17:09:29.902569"
+      "details": "Status: 200, Price: \u20a664,000, Confidence: medium",
+      "timestamp": "2026-01-24T17:34:31.022923"
+    },
+    {
+      "test": "Access Code Usage Decrement",
+      "status": "PASS",
+      "details": "Initial: 1, Final: 0, Decremented: True",
+      "timestamp": "2026-01-24T17:34:31.062948"
+    },
+    {
+      "test": "Estimate Price without Access Code",
+      "status": "PASS",
+      "details": "Status: 422 (should be 403 or 422)",
+      "timestamp": "2026-01-24T17:34:31.100823"
     },
     {
       "test": "Estimate Price - iPhone with iCloud Lock",
-      "status": "PASS",
-      "details": "Status: 200, Price: \u20a6584,000, Confidence: high",
-      "timestamp": "2026-01-24T17:09:29.985321"
+      "status": "FAIL",
+      "details": "Status: 422",
+      "timestamp": "2026-01-24T17:34:31.138571"
     },
     {
       "test": "Estimate Price - Android with FRP Lock",
-      "status": "PASS",
-      "details": "Status: 200, Price: \u20a6753,000, Confidence: high",
-      "timestamp": "2026-01-24T17:09:30.024120"
+      "status": "FAIL",
+      "details": "Status: 422",
+      "timestamp": "2026-01-24T17:34:31.172931"
     },
     {
       "test": "Estimate Price - Tecno with Poor Condition",
-      "status": "PASS",
-      "details": "Status: 200, Price: \u20a678,000, Confidence: high",
-      "timestamp": "2026-01-24T17:09:30.063474"
+      "status": "FAIL",
+      "details": "Status: 422",
+      "timestamp": "2026-01-24T17:34:31.208641"
     },
     {
       "test": "Estimates History",
       "status": "PASS",
       "details": "Status: 200, Estimates: 10",
-      "timestamp": "2026-01-24T17:09:30.102521"
+      "timestamp": "2026-01-24T17:34:31.246633"
     }
   ]
 }

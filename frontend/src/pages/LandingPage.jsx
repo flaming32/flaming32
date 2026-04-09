@@ -1,10 +1,11 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Search, Smartphone, Database, Cpu, Loader2, X, Key, CreditCard, Moon, Sun, Shield, Eye, Package, Copy, Check } from "lucide-react";
+import { Search, Smartphone, Database, Cpu, Loader2, X, Key, CreditCard, Moon, Sun, Shield, Eye, Package, Copy, Check, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import axios from "axios";
@@ -21,8 +22,8 @@ export default function LandingPage({ setPhoneData, setScrapedPrices, accessCode
   const [models, setModels] = useState([]);
   const [phoneType, setPhoneType] = useState("android");
   const [isSearching, setIsSearching] = useState(false);
-  const [brandSearch, setBrandSearch] = useState("");
-  const [modelSearch, setModelSearch] = useState("");
+  const [brandOpen, setBrandOpen] = useState(false);
+  const [modelOpen, setModelOpen] = useState(false);
   
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showAccessCodeModal, setShowAccessCodeModal] = useState(false);
@@ -145,31 +146,18 @@ export default function LandingPage({ setPhoneData, setScrapedPrices, accessCode
     if (accessCodeInput.trim()) verifyAccessCode(accessCodeInput.trim());
   };
 
-  const filteredBrands = useMemo(() => {
-    if (!brandSearch) return brands;
-    return brands.filter(b => b.name.toLowerCase().includes(brandSearch.toLowerCase()));
-  }, [brands, brandSearch]);
-
-  const filteredModels = useMemo(() => {
-    if (!modelSearch) return models;
-    return models.filter(m => m.toLowerCase().includes(modelSearch.toLowerCase()));
-  }, [models, modelSearch]);
-
   const handleBrandChange = (brand) => {
     setSelectedBrand(brand);
-    setBrandSearch("");
     const brandData = brands.find(b => b.name === brand);
     setModels(brandData ? brandData.models : []);
     setPhoneType(brandData?.type || "android");
     setSelectedModel("");
     setCustomModel("");
-    setModelSearch("");
   };
 
   const handleModelChange = (model) => {
     setSelectedModel(model);
     setCustomModel("");
-    setModelSearch("");
   };
 
   const handleSearch = async () => {
@@ -284,50 +272,110 @@ export default function LandingPage({ setPhoneData, setScrapedPrices, accessCode
               {/* Brand */}
               <div>
                 <label className={`font-mono text-xs uppercase tracking-widest block mb-2 ${isDark ? 'text-zinc-500' : 'text-zinc-500'}`}>Brand</label>
-                <Select value={selectedBrand} onValueChange={handleBrandChange}>
-                  <SelectTrigger data-testid="brand-select" className={`w-full h-12 font-headings ${isDark ? 'bg-transparent border-zinc-700' : 'bg-white border-zinc-300'}`}>
-                    <SelectValue placeholder="Select brand" />
-                  </SelectTrigger>
-                  <SelectContent className={`max-h-[400px] ${isDark ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-zinc-200'}`}>
-                    <div className={`p-2 border-b sticky top-0 z-10 ${isDark ? 'border-zinc-800 bg-zinc-900' : 'border-zinc-200 bg-white'}`}>
-                      <div className="relative">
-                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
-                        <Input placeholder="Search brands..." value={brandSearch} onChange={(e) => setBrandSearch(e.target.value)} className={`pl-8 h-9 text-sm ${isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-100 border-zinc-200'}`} onClick={(e) => e.stopPropagation()} />
-                      </div>
-                    </div>
-                    {filteredBrands.map((brand) => (
-                      <SelectItem key={brand.name} value={brand.name} className="font-headings">{brand.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={brandOpen} onOpenChange={setBrandOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={brandOpen}
+                      data-testid="brand-select"
+                      className={`w-full h-12 font-headings justify-between ${isDark ? 'bg-transparent border-zinc-700 hover:bg-zinc-900' : 'bg-white border-zinc-300 hover:bg-zinc-50'}`}
+                    >
+                      <span className={selectedBrand ? '' : 'text-muted-foreground'}>{selectedBrand || "Select brand"}</span>
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className={`w-[--radix-popover-trigger-width] p-0 ${isDark ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-zinc-200'}`} align="start">
+                    <Command className={isDark ? 'bg-zinc-900' : 'bg-white'}>
+                      <CommandInput placeholder="Search brands..." />
+                      <CommandList>
+                        <CommandEmpty>No brand found.</CommandEmpty>
+                        <CommandGroup>
+                          {brands.map((brand) => (
+                            <CommandItem
+                              key={brand.name}
+                              value={brand.name}
+                              onSelect={(val) => {
+                                const found = brands.find(b => b.name.toLowerCase() === val.toLowerCase());
+                                if (found) handleBrandChange(found.name);
+                                setBrandOpen(false);
+                              }}
+                              className="font-headings"
+                            >
+                              <Check className={`mr-2 h-4 w-4 ${selectedBrand === brand.name ? 'opacity-100' : 'opacity-0'}`} />
+                              {brand.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               {/* Model */}
               <div>
                 <label className={`font-mono text-xs uppercase tracking-widest block mb-2 ${isDark ? 'text-zinc-500' : 'text-zinc-500'}`}>Model</label>
-                <Select value={selectedModel} onValueChange={handleModelChange} disabled={!selectedBrand}>
-                  <SelectTrigger data-testid="model-select" className={`w-full h-12 font-headings disabled:opacity-50 ${isDark ? 'bg-transparent border-zinc-700' : 'bg-white border-zinc-300'}`}>
-                    <SelectValue placeholder={customModel || "Select model"} />
-                  </SelectTrigger>
-                  <SelectContent className={`max-h-[400px] ${isDark ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-zinc-200'}`}>
-                    <div className={`p-2 border-b sticky top-0 z-10 ${isDark ? 'border-zinc-800 bg-zinc-900' : 'border-zinc-200 bg-white'}`}>
-                      <div className="relative">
-                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
-                        <Input placeholder="Search models..." value={modelSearch} onChange={(e) => setModelSearch(e.target.value)} className={`pl-8 h-9 text-sm ${isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-100 border-zinc-200'}`} onClick={(e) => e.stopPropagation()} />
+                <Popover open={modelOpen} onOpenChange={setModelOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={modelOpen}
+                      disabled={!selectedBrand}
+                      data-testid="model-select"
+                      className={`w-full h-12 font-headings justify-between disabled:opacity-50 ${isDark ? 'bg-transparent border-zinc-700 hover:bg-zinc-900' : 'bg-white border-zinc-300 hover:bg-zinc-50'}`}
+                    >
+                      <span className={selectedModel || customModel ? '' : 'text-muted-foreground'}>{selectedModel || customModel || "Select model"}</span>
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className={`w-[--radix-popover-trigger-width] p-0 ${isDark ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-zinc-200'}`} align="start">
+                    <Command className={isDark ? 'bg-zinc-900' : 'bg-white'}>
+                      <CommandInput placeholder="Search models..." />
+                      <CommandList>
+                        <CommandEmpty>No model found. Type a custom name below.</CommandEmpty>
+                        <CommandGroup>
+                          {models.map((model) => (
+                            <CommandItem
+                              key={model}
+                              value={model}
+                              onSelect={(val) => {
+                                const found = models.find(m => m.toLowerCase() === val.toLowerCase());
+                                if (found) handleModelChange(found);
+                                setModelOpen(false);
+                              }}
+                              className="font-headings"
+                            >
+                              <Check className={`mr-2 h-4 w-4 ${selectedModel === model ? 'opacity-100' : 'opacity-0'}`} />
+                              {model}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                      <div className={`border-t p-2 ${isDark ? 'border-zinc-800' : 'border-zinc-200'}`}>
+                        <div className={`text-xs mb-2 font-mono ${isDark ? 'text-zinc-500' : 'text-zinc-500'}`}>
+                          Can't find your model?
+                        </div>
+                        <Input 
+                          placeholder="Type model name..." 
+                          value={customModel} 
+                          onChange={(e) => { setCustomModel(e.target.value); setSelectedModel(""); }} 
+                          className={`h-10 text-sm ${isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-100 border-zinc-200'}`} 
+                          data-testid="custom-model-input" 
+                        />
+                        {customModel && (
+                          <Button 
+                            onClick={() => setModelOpen(false)} 
+                            className="w-full mt-2 h-8 text-xs font-mono bg-green-600 text-white hover:bg-green-700"
+                          >
+                            Use: {customModel}
+                          </Button>
+                        )}
                       </div>
-                    </div>
-                    {filteredModels.map((model) => (
-                      <SelectItem key={model} value={model} className="font-headings">{model}</SelectItem>
-                    ))}
-                    <div className={`border-t mt-2 pt-2 px-2 pb-2 ${isDark ? 'border-zinc-800' : 'border-zinc-200'}`}>
-                      <div className={`text-xs mb-2 font-mono ${isDark ? 'text-zinc-500' : 'text-zinc-500'}`}>
-                        {filteredModels.length === 0 ? "Model not found?" : "Can't find your model?"}
-                      </div>
-                      <Input placeholder="Type model name..." value={customModel} onChange={(e) => { setCustomModel(e.target.value); setSelectedModel(""); }} className={`h-10 text-sm mb-2 ${isDark ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-100 border-zinc-200'}`} onClick={(e) => e.stopPropagation()} data-testid="custom-model-input" />
-                      {customModel && <div className="text-xs text-green-500 font-mono">Using: {customModel}</div>}
-                    </div>
-                  </SelectContent>
-                </Select>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 {customModel && !selectedModel && (
                   <div className="mt-2 flex items-center gap-2">
                     <span className="font-mono text-xs text-green-500">Custom: {customModel}</span>
